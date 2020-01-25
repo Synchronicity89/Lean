@@ -54,9 +54,9 @@ namespace QuantConnect.Brokerages.GDAX
             dynamic payload = new ExpandoObject();
 
             payload.size = Math.Abs(order.Quantity);
-            payload.side = order.Direction.ToString().ToLower();
+            payload.side = order.Direction.ToLower();
             payload.type = ConvertOrderType(order.Type);
-            payload.price = (order as LimitOrder)?.LimitPrice ?? ((order as StopMarketOrder)?.StopPrice ?? 0);
+            payload.price = (order as LimitOrder)?.LimitPrice ?? (order as StopLimitOrder)?.LimitPrice ?? ((order as StopMarketOrder)?.StopPrice ?? 0);
             payload.product_id = ConvertSymbol(order.Symbol);
 
             if (_algorithm.BrokerageModel.AccountType == AccountType.Margin)
@@ -73,7 +73,13 @@ namespace QuantConnect.Brokerages.GDAX
                 }
             }
 
-            req.AddJsonBody(payload);
+            if (order.Type == OrderType.StopLimit)
+            {
+                payload.stop = order.Direction == OrderDirection.Buy ? "entry" : "loss";
+                payload.stop_price = (order as StopLimitOrder).StopPrice;
+            }
+
+            req.AddJsonBody(JsonConvert.SerializeObject(payload));
 
             GetAuthenticationToken(req);
             var response = ExecuteRestRequest(req, GdaxEndpointType.Private);
@@ -187,7 +193,7 @@ namespace QuantConnect.Brokerages.GDAX
         {
             var list = new List<Order>();
 
-            var req = new RestRequest("/orders?status=open&status=pending", Method.GET);
+            var req = new RestRequest("/orders?status=open&status=pending&status=active", Method.GET);
             GetAuthenticationToken(req);
             var response = ExecuteRestRequest(req, GdaxEndpointType.Private);
 
@@ -203,6 +209,10 @@ namespace QuantConnect.Brokerages.GDAX
                 if (item.Type == "market")
                 {
                     order = new MarketOrder { Price = item.Price };
+                }
+                else if (!string.IsNullOrEmpty(item.Stop))
+                {
+                    order = new StopLimitOrder { StopPrice = item.StopPrice, LimitPrice = item.Price };
                 }
                 else if (item.Type == "limit")
                 {
@@ -278,7 +288,7 @@ namespace QuantConnect.Brokerages.GDAX
             {
                 if (item.Balance > 0)
                 {
-                    list.Add(new CashAmount(item.Balance, item.Currency.ToUpper()));
+                    list.Add(new CashAmount(item.Balance, item.Currency.ToUpperInvariant()));
                 }
             }
 
