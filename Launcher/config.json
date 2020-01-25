@@ -6,10 +6,10 @@
   // two predefined environments, 'backtesting' and 'live', feel free
   // to add more!
 
-  "environment": "backtesting", // "live-paper", "backtesting", "live-interactive", "live-interactive-iqfeed"
+  "environment": "backtesting-desktop", // "live-paper", "backtesting", "live-interactive", "live-interactive-iqfeed"
 
   // algorithm class selector
-  "algorithm-type-name": "BasicTemplateFrameworkAlgorithm",
+  "algorithm-type-name": "BasicTemplateOptionBullPutSpreadExample",
 
   // Algorithm language selector - options CSharp, FSharp, VisualBasic, Python, Java
   "algorithm-language": "CSharp",
@@ -34,7 +34,7 @@
   "api-handler": "QuantConnect.Api.Api",
   "map-file-provider": "QuantConnect.Data.Auxiliary.LocalDiskMapFileProvider",
   "factor-file-provider": "QuantConnect.Data.Auxiliary.LocalDiskFactorFileProvider",
-  "data-provider": "QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider",
+  "data-provider": "QuantConnect.Lean.Engine.DataFeeds.ApiDataProviderDownload",
   "alpha-handler": "QuantConnect.Lean.Engine.Alphas.DefaultAlphaHandler",
 
   // limits on number of symbols to allow

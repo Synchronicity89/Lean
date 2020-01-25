@@ -125,6 +125,8 @@
     <Compile Include="Alphas\ForexCalendarAlpha.cs" />
     <Compile Include="Alphas\RebalancingLeveragedETFAlpha.cs" />
     <Compile Include="BasicSetAccountCurrencyAlgorithm.cs" />
+    <Compile Include="BasicTemplateOptionBullPutSpreadExample.cs" />
+    <Compile Include="BasicTemplateOptionBullPutSpreadAlgorithm.cs" />
     <Compile Include="HistoryWithSymbolChangesRegressionAlgorithm.cs" />
     <Compile Include="FeeModelNotUsingAccountCurrency.cs" />
     <Compile Include="MaximumPortfolioDrawdownFrameworkAlgorithm.cs" />

@@ -144,6 +144,7 @@
     <Compile Include="AlgorithmManager.cs" />
     <Compile Include="Alphas\ChartingInsightManagerExtension.cs" />
     <Compile Include="Alphas\StatisticsInsightManagerExtension.cs" />
+    <Compile Include="DataFeeds\ApiDataProviderDownload.cs" />
     <Compile Include="DataFeeds\ApiDataProvider.cs" />
     <Compile Include="DataFeeds\BacktestingFutureChainProvider.cs" />
     <Compile Include="DataFeeds\BacktestingOptionChainProvider.cs" />
