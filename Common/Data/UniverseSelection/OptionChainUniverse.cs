@@ -102,7 +102,7 @@ namespace QuantConnect.Data.UniverseSelection
             var optionsUniverseDataCollection = data as OptionChainUniverseDataCollection;
             if (optionsUniverseDataCollection == null)
             {
-                throw new ArgumentException(string.Format("Expected data of type '{0}'", typeof (OptionChainUniverseDataCollection).Name));
+                throw new ArgumentException($"Expected data of type '{typeof(OptionChainUniverseDataCollection).Name}'");
             }
 
             _underlying = optionsUniverseDataCollection.Underlying ?? _underlying;
@@ -113,7 +113,8 @@ namespace QuantConnect.Data.UniverseSelection
                 return Unchanged;
             }
 
-            if (_cacheDate == data.Time.Date)
+            // date change detection needs to be done in exchange time zone
+            if (_cacheDate == data.Time.ConvertFromUtc(Option.Exchange.TimeZone).Date)
             {
                 return Unchanged;
             }
@@ -124,7 +125,7 @@ namespace QuantConnect.Data.UniverseSelection
             // if results are not dynamic, we cache them and won't call filtering till the end of the day
             if (!results.IsDynamic)
             {
-                _cacheDate = data.Time.Date;
+                _cacheDate = data.Time.ConvertFromUtc(Option.Exchange.TimeZone).Date;
             }
 
             // always prepend the underlying symbol
@@ -246,16 +247,10 @@ namespace QuantConnect.Data.UniverseSelection
         {
             var result = subscriptionService.Add(security.Symbol, UniverseSettings.Resolution,
                                                  UniverseSettings.FillForward,
-                                                 UniverseSettings.ExtendedMarketHours);
+                                                 UniverseSettings.ExtendedMarketHours,
+                                                 // force raw data normalization mode for underlying
+                                                 dataNormalizationMode: DataNormalizationMode.Raw);
 
-            // force raw data normalization mode for underlying
-            if (security.Symbol == _underlyingSymbol.First())
-            {
-                foreach (var config in result)
-                {
-                    config.DataNormalizationMode = DataNormalizationMode.Raw;
-                }
-            }
             return result.Select(config => new SubscriptionRequest(isUniverseSubscription: false,
                                                                    universe: this,
                                                                    security: security,

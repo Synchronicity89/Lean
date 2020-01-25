@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using QuantConnect.Algorithm.Framework;
 using QuantConnect.Algorithm.Framework.Alphas;
 using QuantConnect.Algorithm.Framework.Execution;
 using QuantConnect.Algorithm.Framework.Portfolio;
@@ -30,7 +29,7 @@ namespace QuantConnect.Algorithm.CSharp
     /// Basic template options framework algorithm uses framework components to define an algorithm
     /// that trades options.
     /// </summary>
-    public class BasicTemplateOptionsFrameworkAlgorithm : QCAlgorithmFramework, IRegressionAlgorithmDefinition
+    public class BasicTemplateOptionsFrameworkAlgorithm : QCAlgorithm, IRegressionAlgorithmDefinition
     {
         public override void Initialize()
         {
@@ -115,7 +114,7 @@ namespace QuantConnect.Algorithm.CSharp
         /// </summary>
         class SingleSharePortfolioConstructionModel : PortfolioConstructionModel
         {
-            public override IEnumerable<IPortfolioTarget> CreateTargets(QCAlgorithmFramework algorithm, Insight[] insights)
+            public override IEnumerable<IPortfolioTarget> CreateTargets(QCAlgorithm algorithm, Insight[] insights)
             {
                 foreach (var insight in insights)
                 {
@@ -146,18 +145,25 @@ namespace QuantConnect.Algorithm.CSharp
             {"Drawdown", "0.700%"},
             {"Expectancy", "0"},
             {"Net Profit", "0.271%"},
-            {"Sharpe Ratio", "9.165"},
+            {"Sharpe Ratio", "11.225"},
+            {"Probabilistic Sharpe Ratio", "0%"},
             {"Loss Rate", "0%"},
             {"Win Rate", "100%"},
             {"Profit-Loss Ratio", "0"},
             {"Alpha", "0"},
-            {"Beta", "24.746"},
-            {"Annual Standard Deviation", "0.025"},
+            {"Beta", "0.567"},
+            {"Annual Standard Deviation", "0.03"},
             {"Annual Variance", "0.001"},
-            {"Information Ratio", "8.883"},
-            {"Tracking Error", "0.025"},
-            {"Treynor Ratio", "0.009"},
+            {"Information Ratio", "-11.225"},
+            {"Tracking Error", "0.023"},
+            {"Treynor Ratio", "0.603"},
             {"Total Fees", "$4.00"},
+            {"Fitness Score", "0.014"},
+            {"Kelly Criterion Estimate", "0.327"},
+            {"Kelly Criterion Probability Value", "1"},
+            {"Sortino Ratio", "79228162514264337593543950335"},
+            {"Return Over Maximum Drawdown", "79228162514264337593543950335"},
+            {"Portfolio Turnover", "0.014"},
             {"Total Insights Generated", "26"},
             {"Total Insights Closed", "24"},
             {"Total Insights Analysis Completed", "24"},
