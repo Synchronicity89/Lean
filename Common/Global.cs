@@ -40,8 +40,14 @@ namespace QuantConnect
         public const string DB = "yyyy-MM-dd HH:mm:ss";
         /// QuantConnect UX Date Representation
         public const string UI = "yyyy-MM-dd HH:mm:ss";
+        /// en-US Short Date and Time Pattern
+        public const string USShort = "M/d/yy h:mm tt";
+        /// en-US Short Date Pattern
+        public const string USShortDateOnly = "M/d/yy";
         /// en-US format
         public const string US = "M/d/yyyy h:mm:ss tt";
+        /// en-US Date format
+        public const string USDateOnly = "M/d/yyyy";
         /// Date format of QC forex data
         public const string Forex = "yyyyMMdd HH:mm:ss.ffff";
         /// YYYYMM Year and Month Character Date Representation (used for futures)
@@ -64,21 +70,27 @@ namespace QuantConnect
         public string CurrencySymbol;
 
         /// Average Price of our Holding in the currency the symbol is traded in
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public decimal AveragePrice;
 
         /// Quantity of Symbol We Hold.
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public decimal Quantity;
 
         /// Current Market Price of the Asset in the currency the symbol is traded in
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public decimal MarketPrice;
 
         /// Current market conversion rate into the account currency
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public decimal? ConversionRate;
 
         /// Current market value of the holding
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public decimal MarketValue;
 
         /// Current unrealized P/L of the holding
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public decimal UnrealizedPnL;
 
         /// Create a new default holding:
@@ -156,20 +168,6 @@ namespace QuantConnect
 
             return value;
         }
-    }
-
-    /// <summary>
-    /// Processing runmode of the backtest.
-    /// </summary>
-    /// <obsolete>The runmode enum is now obsolete and all tasks are run in series mode. This was done to ensure algorithms have memory of the day before.</obsolete>
-    public enum RunMode
-    {
-        /// Automatically detect the runmode of the algorithm: series for minute data, parallel for second-tick
-        Automatic,
-        /// Series runmode for the algorithm
-        Series,
-        /// Parallel runmode for the algorithm
-        Parallel
     }
 
     /// <summary>
@@ -271,7 +269,6 @@ namespace QuantConnect
         /// </summary>
         Server2048
     }
-
 
     /// <summary>
     /// Type of tradable security / underlying asset

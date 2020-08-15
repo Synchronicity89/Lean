@@ -40,8 +40,8 @@ namespace QuantConnect.Algorithm.CSharp
         private int _expectedContractIndex;
         private readonly List<Symbol> _expectedContracts = new List<Symbol>
         {
-            SymbolRepresentation.ParseOptionTickerOSI("GOOG  151224P00747500"),
             SymbolRepresentation.ParseOptionTickerOSI("GOOG  151224P00750000"),
+            SymbolRepresentation.ParseOptionTickerOSI("GOOG  151224P00747500"),
             SymbolRepresentation.ParseOptionTickerOSI("GOOG  151224P00752500")
         };
 
@@ -231,15 +231,15 @@ namespace QuantConnect.Algorithm.CSharp
             {"Treynor Ratio", "0"},
             {"Total Fees", "$6.00"},
             {"Fitness Score", "0"},
-            {"Kelly Criterion Estimate", "-1.309"},
-            {"Kelly Criterion Probability Value", "0.632"},
+            {"Kelly Criterion Estimate", "0"},
+            {"Kelly Criterion Probability Value", "0"},
             {"Sortino Ratio", "0"},
             {"Return Over Maximum Drawdown", "0"},
             {"Portfolio Turnover", "0"},
-            {"Total Insights Generated", "6"},
-            {"Total Insights Closed", "3"},
-            {"Total Insights Analysis Completed", "3"},
-            {"Long Insight Count", "3"},
+            {"Total Insights Generated", "0"},
+            {"Total Insights Closed", "0"},
+            {"Total Insights Analysis Completed", "0"},
+            {"Long Insight Count", "0"},
             {"Short Insight Count", "0"},
             {"Long/Short Ratio", "100%"},
             {"Estimated Monthly Alpha Value", "$0"},
@@ -248,7 +248,8 @@ namespace QuantConnect.Algorithm.CSharp
             {"Mean Population Direction", "0%"},
             {"Mean Population Magnitude", "0%"},
             {"Rolling Averaged Population Direction", "0%"},
-            {"Rolling Averaged Population Magnitude", "0%"}
+            {"Rolling Averaged Population Magnitude", "0%"},
+            {"OrderListHash", "731140098"}
         };
     }
 }

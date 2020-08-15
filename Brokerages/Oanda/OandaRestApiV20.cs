@@ -237,6 +237,8 @@ namespace QuantConnect.Brokerages.Oanda
             // replace the brokerage order id
             order.BrokerId[0] = response.Data.OrderCreateTransaction.Id;
 
+            OnOrderEvent(new OrderEvent(order, DateTime.UtcNow, OrderFee.Zero) { Status = OrderStatus.UpdateSubmitted });
+
             // check if the updated (marketable) order was filled
             if (response.Data.OrderFillTransaction != null)
             {
@@ -344,10 +346,7 @@ namespace QuantConnect.Brokerages.Oanda
             switch (type)
             {
                 case "HEARTBEAT":
-                    lock (LockerConnectionMonitor)
-                    {
-                        LastHeartbeatUtcTime = DateTime.UtcNow;
-                    }
+                    TransactionsConnectionHandler.KeepAlive(DateTime.UtcNow);
                     break;
 
                 case "ORDER_FILL":
@@ -396,10 +395,7 @@ namespace QuantConnect.Brokerages.Oanda
             switch (type)
             {
                 case "HEARTBEAT":
-                    lock (LockerConnectionMonitor)
-                    {
-                        LastHeartbeatUtcTime = DateTime.UtcNow;
-                    }
+                    PricingConnectionHandler.KeepAlive(DateTime.UtcNow);
                     break;
 
                 case "PRICE":

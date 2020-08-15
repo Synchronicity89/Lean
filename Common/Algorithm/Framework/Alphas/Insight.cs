@@ -206,8 +206,9 @@ namespace QuantConnect.Algorithm.Framework.Alphas
         /// <param name="magnitude">The predicted magnitude as a percentage change</param>
         /// <param name="confidence">The confidence in this insight</param>
         /// <param name="sourceModel">An identifier defining the model that generated this insight</param>
-        public Insight(Symbol symbol, Func<DateTime, DateTime> expiryFunc, InsightType type, InsightDirection direction, double? magnitude, double? confidence, string sourceModel = null)
-            : this(symbol, new FuncPeriodSpecification(expiryFunc), type, direction, magnitude, confidence)
+        /// <param name="weight">The portfolio weight of this insight</param>
+        public Insight(Symbol symbol, Func<DateTime, DateTime> expiryFunc, InsightType type, InsightDirection direction, double? magnitude, double? confidence, string sourceModel = null, double? weight = null)
+            : this(symbol, new FuncPeriodSpecification(expiryFunc), type, direction, magnitude, confidence, sourceModel, weight)
         {
         }
 
@@ -287,7 +288,7 @@ namespace QuantConnect.Algorithm.Framework.Alphas
         /// Creates a deep clone of this insight instance
         /// </summary>
         /// <returns>A new insight with identical values, but new instances</returns>
-        public Insight Clone()
+        public virtual Insight Clone()
         {
             return new Insight(Symbol, Period, Type, Direction, Magnitude, Confidence, weight:Weight)
             {
@@ -376,10 +377,11 @@ namespace QuantConnect.Algorithm.Framework.Alphas
         /// <param name="magnitude">The predicted magnitude as a percent change</param>
         /// <param name="confidence">The confidence in this insight</param>
         /// <param name="sourceModel">The model generating this insight</param>
+        /// <param name="weight">The portfolio weight of this insight</param>
         /// <returns>A new insight object for the specified parameters</returns>
-        public static Insight Price(Symbol symbol, Func<DateTime, DateTime> expiryFunc, InsightDirection direction, double? magnitude = null, double? confidence = null, string sourceModel = null)
+        public static Insight Price(Symbol symbol, Func<DateTime, DateTime> expiryFunc, InsightDirection direction, double? magnitude = null, double? confidence = null, string sourceModel = null, double? weight = null)
         {
-            return new Insight(symbol, expiryFunc, InsightType.Price, direction, magnitude, confidence, sourceModel);
+            return new Insight(symbol, expiryFunc, InsightType.Price, direction, magnitude, confidence, sourceModel, weight);
         }
 
         /// <summary>
@@ -744,7 +746,6 @@ namespace QuantConnect.Algorithm.Framework.Alphas
         /// Special case for insights where we do not know whats the
         /// <see cref="Period"/> or <see cref="CloseTimeUtc"/>.
         /// </summary>
-        /// <remarks><see cref="OrderBasedInsightGenerator"/></remarks>
         private class EndOfTimeCloseTimePeriodSpecification : IPeriodSpecification
         {
             public void SetPeriodAndCloseTime(Insight insight, SecurityExchangeHours exchangeHours)

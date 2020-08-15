@@ -56,6 +56,8 @@ namespace QuantConnect.Brokerages.Fxcm
         private DateTime _lastReadyMessageTime;
         private volatile bool _connectionLost;
 
+        // tracks requested order updates, so we can flag Submitted order events as updates
+        private readonly ConcurrentDictionary<int, int> _orderUpdates = new ConcurrentDictionary<int, int>();
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private readonly ConcurrentQueue<OrderEvent> _orderEventQueue = new ConcurrentQueue<OrderEvent>();
         private readonly FxcmSymbolMapper _symbolMapper = new FxcmSymbolMapper();
@@ -189,7 +191,12 @@ namespace QuantConnect.Brokerages.Fxcm
             {
                 var message =
                     err.Message.Contains("ORA-20101") ? "Incorrect login credentials" :
-                    err.Message.Contains("ORA-20003") ? "API connections are not available on Mini accounts. If you have a standard account contact api@fxcm.com to enable API access" :
+                    err.Message.Contains("ORA-20003") ? "Contact api@fxcm.com to enable API access, below is a template email. " + Environment.NewLine +
+                        "Email: api@fxcm.com " + Environment.NewLine +
+                        "Template: " + Environment.NewLine +
+                        "Hello FXCM staff, " + Environment.NewLine +
+                        "Please enable Java API for all accounts which are associated with this email address. " + Environment.NewLine +
+                        "Also, please respond to this email address once Java API has been enabled, letting me know that the change was done successfully." :
                     err.Message;
 
                 _cancellationTokenSource.Cancel();
@@ -582,6 +589,7 @@ namespace QuantConnect.Brokerages.Fxcm
             AutoResetEvent autoResetEvent;
             lock (_locker)
             {
+                _orderUpdates[order.Id] = order.Id;
                 _currentRequest = _gateway.sendMessage(orderReplaceRequest);
                 autoResetEvent = new AutoResetEvent(false);
                 _mapRequestsToAutoResetEvents[_currentRequest] = autoResetEvent;

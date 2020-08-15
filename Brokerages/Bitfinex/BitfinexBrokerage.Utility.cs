@@ -125,6 +125,14 @@ namespace QuantConnect.Brokerages.Bitfinex
             return $"/{ApiVersion}/{method}";
         }
 
+        /// <summary>
+        /// Returns the complete order update endpoint for current Bitfinex API version
+        /// </summary>
+        private string GetOrderUpdateEndpoint()
+        {
+            return GetEndpoint("order/cancel/replace");
+        }
+
         private static OrderStatus ConvertOrderStatus(Messages.Order order)
         {
             if (order.IsLive && order.ExecutedAmount == 0)
@@ -264,7 +272,7 @@ namespace QuantConnect.Brokerages.Bitfinex
         {
             StringBuilder hex = new StringBuilder(ba.Length * 2);
             foreach (byte b in ba)
-                hex.AppendFormat("{0:x2}", b);
+                hex.AppendFormat(CultureInfo.InvariantCulture, "{0:x2}", b);
             return hex.ToString();
         }
 
@@ -328,8 +336,10 @@ namespace QuantConnect.Brokerages.Bitfinex
                     CachedOrderIDs.TryAdd(order.Id, order);
                 }
 
+                var isUpdate = endpoint.Equals(GetOrderUpdateEndpoint());
+
                 // Generate submitted event
-                OnOrderEvent(new OrderEvent(order, DateTime.UtcNow, orderFee, "Bitfinex Order Event") { Status = OrderStatus.Submitted });
+                OnOrderEvent(new OrderEvent(order, DateTime.UtcNow, orderFee, "Bitfinex Order Event") { Status = isUpdate ? OrderStatus.UpdateSubmitted : OrderStatus.Submitted });
                 Log.Trace($"Order submitted successfully - OrderId: {order.Id}");
 
                 UnlockStream();

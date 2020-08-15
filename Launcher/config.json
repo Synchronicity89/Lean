@@ -21,13 +21,13 @@
   //"algorithm-location": "QuantConnect.Algorithm.VisualBasic.dll",
   //"algorithm-location": "QuantConnect.Algorithm.Java.dll",
 
-  //Jupyter notebook
+  //Research notebook
   //"composer-dll-directory": ".",
 
   // engine
   "data-folder": "../../../Data/",
 
-  // debugging configuration
+  // debugging configuration - options for debugging-method LocalCmdLine, VisualStudio, PTVSD, PyCharm
   "debugging": false,
   "debugging-method": "LocalCmdline",
 
@@ -76,6 +76,7 @@
   "ib-tws-dir": "C:\\Jts",
   "ib-trading-mode": "paper",
   "ib-enable-delayed-streaming-data": false,
+  "ib-version": "974",
 
   // tradier configuration
   "tradier-account-id": "",
@@ -123,6 +124,9 @@
   // Required to access data from US Energy Information Administration
   // To get your access token go to https://www.eia.gov/opendata
   "us-energy-information-auth-token": "",
+
+  // Required for IEX history requests
+  "iex-cloud-api-key": "",
 
   // alpaca configuration
   // available trading mode: 'paper', 'live'

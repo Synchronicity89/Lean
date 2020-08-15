@@ -16,6 +16,7 @@
 
 using System;
 using System.IO;
+using QuantConnect.Configuration;
 using QuantConnect.Data;
 using QuantConnect.Interfaces;
 using QuantConnect.Logging;
@@ -27,6 +28,8 @@ namespace QuantConnect.Lean.Engine.DataFeeds
     /// </summary>
     public static class SubscriptionDataSourceReader
     {
+        private static readonly bool ShowMissingDataLogs = Config.GetBool("show-missing-data-logs", false);
+
         /// <summary>
         /// Creates a new <see cref="ISubscriptionDataSourceReader"/> capable of handling the specified <paramref name="source"/>
         /// </summary>
@@ -63,7 +66,7 @@ namespace QuantConnect.Lean.Engine.DataFeeds
             }
 
             // wire up event handlers for logging missing files
-            if (source.TransportMedium == SubscriptionTransportMedium.LocalFile)
+            if (ShowMissingDataLogs && source.TransportMedium == SubscriptionTransportMedium.LocalFile)
             {
                 if (!factory.IsSparseData())
                 {
@@ -86,10 +89,11 @@ namespace QuantConnect.Lean.Engine.DataFeeds
             // create cache directory if not existing
             if (!Directory.Exists(Globals.Cache)) Directory.CreateDirectory(Globals.Cache);
 
+            var frontierToDelete = DateTime.Now.AddHours(-24);
             // clean old files out of the cache
             foreach (var file in Directory.EnumerateFiles(Globals.Cache))
             {
-                if (File.GetCreationTime(file) < DateTime.Now.AddHours(-24)) File.Delete(file);
+                if (File.GetCreationTime(file) < frontierToDelete) File.Delete(file);
             }
         }
     }

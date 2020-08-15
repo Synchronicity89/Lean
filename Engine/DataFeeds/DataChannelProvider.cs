@@ -15,6 +15,8 @@
 
 using System;
 using QuantConnect.Data;
+using QuantConnect.Interfaces;
+using QuantConnect.Packets;
 
 namespace QuantConnect.Lean.Engine.DataFeeds
 {
@@ -26,7 +28,7 @@ namespace QuantConnect.Lean.Engine.DataFeeds
         /// <summary>
         /// True if this subscription request should be streamed
         /// </summary>
-        public virtual bool ShouldStreamSubscription(SubscriptionDataConfig config)
+        public virtual bool ShouldStreamSubscription(LiveNodePacket job, SubscriptionDataConfig config)
         {
             return IsStreamingType(config) || !config.IsCustomData;
         }

@@ -99,7 +99,7 @@ namespace QuantConnect.Brokerages.Fxcm
             if (_accounts[_accountId].getParties().getFXCMPositionMaintenance() == "Y")
             {
                 throw new NotSupportedException("FxcmBrokerage.LoadAccounts(): The Lean engine does not support accounts with Hedging enabled. " +
-                    "Please contact FXCM Active Trader support to disable Hedging. They can be reached at 646.432.2970 or by email, activetrader@fxcm.com."
+                    "Please contact FXCM Active Trader support to disable Hedging. They can be reached at https://www.fxcm.com/markets/contact-client-support/ through their Live Chat or Phone."
                 );
             }
         }
@@ -392,6 +392,11 @@ namespace QuantConnect.Brokerages.Fxcm
                     // existing order
                     if (!OrderIsBeingProcessed(orderStatus.getCode()))
                     {
+                        var status = ConvertOrderStatus(orderStatus);
+
+                        int id;
+                        // if we get a Submitted status and we had placed an order update, this new event is flagged as an update
+                        var isUpdate = status == OrderStatus.Submitted && _orderUpdates.TryRemove(order.Id, out id);
                         var security = _securityProvider.GetSecurity(order.Symbol);
                         order.PriceCurrency = security.SymbolProperties.QuoteCurrency;
 
@@ -399,9 +404,9 @@ namespace QuantConnect.Brokerages.Fxcm
                             DateTime.UtcNow,
                             OrderFee.Zero)
                         {
-                            Status = ConvertOrderStatus(orderStatus),
+                            Status = isUpdate ? OrderStatus.UpdateSubmitted : status,
                             FillPrice = Convert.ToDecimal(message.getPrice()),
-                            FillQuantity = Convert.ToInt32(message.getSide() == SideFactory.BUY ? message.getLastQty() : -message.getLastQty())
+                            FillQuantity = Convert.ToInt32(message.getSide() == SideFactory.BUY ? message.getLastQty() : -message.getLastQty()),
                         };
 
                         // we're catching the first fill so we apply the fees only once

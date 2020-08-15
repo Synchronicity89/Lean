@@ -23,6 +23,7 @@ using QuantConnect.Data;
 using QuantConnect.Data.Custom;
 using QuantConnect.Data.Custom.Fred;
 using QuantConnect.Data.Custom.Tiingo;
+using QuantConnect.Data.Custom.TradingEconomics;
 using QuantConnect.Data.Market;
 using QuantConnect.Data.UniverseSelection;
 using QuantConnect.Interfaces;
@@ -74,7 +75,8 @@ namespace QuantConnect.Lean.Engine.DataFeeds
             IFactorFileProvider factorFileProvider,
             IDataProvider dataProvider,
             IDataFeedSubscriptionManager subscriptionManager,
-            IDataFeedTimeProvider dataFeedTimeProvider)
+            IDataFeedTimeProvider dataFeedTimeProvider,
+            IDataChannelProvider dataChannelProvider)
         {
             if (!(job is LiveNodePacket))
             {
@@ -87,7 +89,7 @@ namespace QuantConnect.Lean.Engine.DataFeeds
             _timeProvider = dataFeedTimeProvider.TimeProvider;
             _dataQueueHandler = GetDataQueueHandler();
             _dataProvider = dataProvider;
-            _channelProvider = GetDataChannelProvider();
+            _channelProvider = dataChannelProvider;
 
             _frontierTimeProvider = dataFeedTimeProvider.FrontierTimeProvider;
             _customExchange = new BaseDataExchange("CustomDataExchange") {SleepInterval = 10};
@@ -119,7 +121,7 @@ namespace QuantConnect.Lean.Engine.DataFeeds
             if (subscription != null)
             {
                 // send the subscription for the new symbol through to the data queuehandler
-                if (_channelProvider.ShouldStreamSubscription(subscription.Configuration))
+                if (_channelProvider.ShouldStreamSubscription(_job, subscription.Configuration))
                 {
                     _dataQueueHandler.Subscribe(_job, new[] { request.Security.Symbol });
                 }
@@ -137,7 +139,7 @@ namespace QuantConnect.Lean.Engine.DataFeeds
             var symbol = subscription.Configuration.Symbol;
 
             // remove the subscriptions
-            if (!_channelProvider.ShouldStreamSubscription(subscription.Configuration))
+            if (!_channelProvider.ShouldStreamSubscription(_job, subscription.Configuration))
             {
                 _customExchange.RemoveEnumerator(symbol);
                 _customExchange.RemoveDataHandler(symbol);
@@ -177,17 +179,6 @@ namespace QuantConnect.Lean.Engine.DataFeeds
         }
 
         /// <summary>
-        /// Gets the <see cref="IDataChannelProvider"/> to use. By default this will try to load
-        /// the type specified in the configuration via the 'data-channel-provider'
-        /// </summary>
-        /// <returns>The loaded <see cref="IDataChannelProvider"/></returns>
-        protected virtual IDataChannelProvider GetDataChannelProvider()
-        {
-            Log.Trace($"LiveTradingDataFeed.GetDataChannelProvider(): will use {_job.DataChannelProvider}");
-            return Composer.Instance.GetExportedValueByTypeName<IDataChannelProvider>(_job.DataChannelProvider);
-        }
-
-        /// <summary>
         /// Creates a new subscription for the specified security
         /// </summary>
         /// <param name="request">The subscription request</param>
@@ -201,7 +192,7 @@ namespace QuantConnect.Lean.Engine.DataFeeds
                 var timeZoneOffsetProvider = new TimeZoneOffsetProvider(request.Security.Exchange.TimeZone, request.StartTimeUtc, request.EndTimeUtc);
 
                 IEnumerator<BaseData> enumerator;
-                if (!_channelProvider.ShouldStreamSubscription(request.Configuration))
+                if (!_channelProvider.ShouldStreamSubscription(_job, request.Configuration))
                 {
                     if (!Quandl.IsAuthCodeSet)
                     {
@@ -225,6 +216,12 @@ namespace QuantConnect.Lean.Engine.DataFeeds
                     {
                         // we're not using the SubscriptionDataReader, so be sure to set the auth token here
                         FredApi.SetAuthCode(Config.Get("fred-auth-token"));
+                    }
+
+                    if (!TradingEconomicsCalendar.IsAuthCodeSet)
+                    {
+                        // we're not using the SubscriptionDataReader, so be sure to set the auth token here
+                        TradingEconomicsCalendar.SetAuthCode(Config.Get("trading-economics-auth-token"));
                     }
 
                     var factory = new LiveCustomDataSubscriptionEnumeratorFactory(_timeProvider);
