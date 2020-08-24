@@ -5,6 +5,7 @@ using QuantConnect.Interfaces;
 using QuantConnect.Logging;
 using QuantConnect.Util;
 using QuantConnect.Securities;
+using System.Net;
 
 namespace QuantConnect.Lean.Engine.DataFeeds
 {
