@@ -15,7 +15,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using NodaTime;
 using NUnit.Framework;
 using QuantConnect.Algorithm;
@@ -85,20 +87,37 @@ namespace QuantConnect.Tests.Algorithm
         public void ImplicitTickResolutionHistoryRequestTradeBarApiThrowsException()
         {
             var spy = _algorithm.AddEquity("SPY", Resolution.Tick).Symbol;
-            Assert.Throws<InvalidOperationException>(() => _algorithm.History(spy, 1).ToList());
+            var ex = Assert.Throws<InvalidOperationException>(() => _algorithm.History(spy, 1).ToList());
+            Assert.AreEqual(ex.Message, "Calling History<TradeBar> method with Resolution.Tick will return an empty result. Please use the generic version with Tick type parameter or provide a list of Symbols to use the Slice history request API.");
+        }
+
+        [TestCase(Resolution.Second)]
+        [TestCase(Resolution.Minute)]
+        [TestCase(Resolution.Hour)]
+        [TestCase(Resolution.Daily)]
+        [Test]
+        public void HourResolutionHistoryRequestTradeBarApiDoesNotThrowException(Resolution resolution)
+        {
+            var spy = _algorithm.AddEquity("SPY", resolution).Symbol;
+            Assert.DoesNotThrow(() => _algorithm.History(spy, 1).ToList());
         }
 
         [Test]
         public void TickResolutionHistoryRequestTradeBarApiThrowsException()
         {
-            Assert.Throws<InvalidOperationException>(
-                () => _algorithm.History(Symbols.SPY, 1, Resolution.Tick).ToList());
+            var validErrors = "Calling History<TradeBar> method with Resolution.Tick will return an empty result. " + 
+                "Please use the generic version with Tick type parameter or provide a list of Symbols to use the Slice history request API.";
+            var s = Assert.Throws<InvalidOperationException>(
+                () => _algorithm.History(Symbols.SPY, 1, Resolution.Tick).ToList()).Message;
+            Assert.IsTrue(validErrors.Contains(s));
 
-            Assert.Throws<InvalidOperationException>(
-                () => _algorithm.History(Symbols.SPY, TimeSpan.FromSeconds(2), Resolution.Tick).ToList());
+            s = Assert.Throws<InvalidOperationException>(
+                () => _algorithm.History(Symbols.SPY, TimeSpan.FromSeconds(2), Resolution.Tick).ToList()).Message;
+            Assert.IsTrue(validErrors.Contains(s));
 
-            Assert.Throws<InvalidOperationException>(
-                () => _algorithm.History(Symbols.SPY, DateTime.UtcNow.AddDays(-1), DateTime.UtcNow, Resolution.Tick).ToList());
+            s = Assert.Throws<InvalidOperationException>(
+                () => _algorithm.History(Symbols.SPY, DateTime.UtcNow.AddDays(-1), DateTime.UtcNow, Resolution.Tick).ToList()).Message;
+            Assert.IsTrue(validErrors.Contains(s));
         }
 
         [TestCase(Resolution.Second)]
