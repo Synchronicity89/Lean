@@ -15,6 +15,7 @@
 */
 
 using System;
+using System.Runtime.CompilerServices;
 using QuantConnect.Data.Market;
 using Python.Runtime;
 
@@ -49,6 +50,7 @@ namespace QuantConnect.Data.Consolidators
         private PeriodCountConsolidatorBase(IPeriodSpecification periodSpecification)
         {
             _periodSpecification = periodSpecification;
+            _period = _periodSpecification.Period;
         }
 
         /// <summary>
@@ -269,6 +271,7 @@ namespace QuantConnect.Data.Consolidators
         /// </summary>
         /// <param name="time">The bar time to be rounded down</param>
         /// <returns>The rounded bar time</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected DateTime GetRoundedBarTime(DateTime time)
         {
             var barTime = _periodSpecification.GetRoundedBarTime(time);
