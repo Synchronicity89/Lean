@@ -31,7 +31,7 @@ namespace QuantConnect.Lean.Launcher.CustomCode
         public OrderTicket slOrder;
 
         public OrderTicket tpOrder;
-        public decimal highestSPYPrice;
+        public decimal highestPrice;
         public int bullBear = 1;
         public LimitOrderStopLossTakeProfit algo;
         public DateTime stopMarketOrderFillTime;
@@ -52,7 +52,7 @@ namespace QuantConnect.Lean.Launcher.CustomCode
         public void Report(string message)
         {
             // string toPrint = message + ";, $$$R$$$;, limitOrder;" + limitOrder?.ToString() + ",; tpOrder;" + tpOrder?.ToString() + 
-            // ",; slOrder;" + slOrder?.ToString() + ",; highestSPYPrice;" + highestSPYPrice.ToString();
+            // ",; slOrder;" + slOrder?.ToString() + ",; highestPrice;" + highestPrice.ToString();
             // if(logged.Contains(toPrint) == false)
             // {
             // 	//algo.Debug(sameLog + "; " + toPrint);
@@ -113,7 +113,7 @@ namespace QuantConnect.Lean.Launcher.CustomCode
         public override bool OnOrderEvent(OrderEvent orderEvent)
         {
             if (orderEvent.Status != OrderStatus.Filled || !algo.CurrentSlice.Where(k => k.Key.Value == ticker).Any()) return false;
-            var close = "close;" + algo.CurrentSlice[ticker].Close.ToString() + ";highestSPYPrice;" + highestSPYPrice.ToString(C.en_us) + ";";
+            var close = "close;" + algo.CurrentSlice[ticker].Close.ToString() + ";highestPrice;" + highestPrice.ToString(C.en_us) + ";";
             // Limit Order has been filled, so now create Take Profit and Stop Loss orders
             if (slOrder == null && limitOrder != null && limitOrder.OrderId == orderEvent.OrderId)
             {
@@ -123,14 +123,22 @@ namespace QuantConnect.Lean.Launcher.CustomCode
                 // Create Take Profit Order of opposite amount
                 var quantity = -algo.Securities[ticker].Holdings.Quantity * bullBear;
                 var limitPrice = Math.Round(limitTicket.AverageFillPrice * (1.00m + bullBear * stopOffset * 2.0m), 2);
+                if (bullBear > 0)
+                {
+                    limitPrice = limitPrice > highestPrice ? limitPrice : highestPrice;
+                }
+                else
+                {
+                    limitPrice = limitPrice < highestPrice ? limitPrice : highestPrice;
+                }
                 var mess = close + "TP; quantity;" + quantity.ToString(C.en_us) + " ;limitPrice;" + limitPrice.ToString(C.en_us);
                 TPLimitOrder(ticker, quantity, limitPrice, mess);// * 1.5M
-                if (highestSPYPrice == -1)
+                if (highestPrice == -1)
                 {
-                    highestSPYPrice = algo.CurrentSlice[ticker].Close;
+                    highestPrice = algo.CurrentSlice[ticker].Close;
                 }
                 var quantitySL = -algo.Securities[ticker].Holdings.Quantity * bullBear;
-                var priceSL = Math.Round(highestSPYPrice * (1.00m - stopOffset * bullBear), 2);
+                var priceSL = Math.Round(highestPrice * (1.00m - stopOffset * bullBear), 2);
                 var mess2 = close + "StopLoss;quantitySL;" + quantitySL.ToString(C.en_us) + ";priceSL;" + priceSL.ToString(C.en_us);
                 slOrder = algo.StopMarketOrder(ticker, quantitySL, priceSL, mess2);
                 limitOrder = null;
@@ -190,8 +198,8 @@ namespace QuantConnect.Lean.Launcher.CustomCode
 
     public class LimitOrderStopLossTakeProfit : QCAlgorithm
     {
-        //some choices
         //"CTSH", 	"AAPL", 	"ANSS", 	"ATVI", 	"ANET", 	"ADBE", 	"CELG", 	"BIIB", 	"GILD", 	"ABMD", 	"UNH", 	"ALXN", 	"BLK", 	"HFC", 	"KSU", 
+        //public List<string> tickers = new List<string>(new string[] {"CTSH", "AAPL", "ANSS", "ANET", "ADBE", "CELG", "BIIB", "GILD", "ABMD", "UNH", "ALXN", "BLK" });//,
         public List<string> tickers = new List<string> { "GILD", "ABMD", "UNH", "ALXN", "BLK", "HFC", "KSU" }; //random stock picks. replace these with your own picks
         //"ATVI", "ADBE", "CELG", "BIIB", "GILD", "ABMD", "UNH", "ALXN", "BLK", "HFC", "KSU" });//"BND", "DVN" positive 2015 - 2020
 
@@ -200,7 +208,7 @@ namespace QuantConnect.Lean.Launcher.CustomCode
         public override void Initialize()
         {
             SetStartDate(2012, 1, 1);
-            SetEndDate(2020, 10, 1);
+            //SetEndDate(2020, 10, 1);
             SetCash(100000);
             tickers.ForEach(t =>
             {
@@ -221,7 +229,7 @@ namespace QuantConnect.Lean.Launcher.CustomCode
 
             foreach (var ticker in slice.Select(k => k.Key.Value))
             {
-                var close = "close;" + CurrentSlice[ticker].Close.ToString() + ";highestSPYPrice;" + orders[ticker].highestSPYPrice.ToString(C.en_us) + ";";
+                var close = "close;" + CurrentSlice[ticker].Close.ToString() + ";highestPrice;" + orders[ticker].highestPrice.ToString(C.en_us) + ";";
                 if (this.Securities[ticker].Holdings.Quantity == 0)
                 {
                     //if (Portfolio.MarginRemaining > this.Securities[ticker].Close)
@@ -245,7 +253,7 @@ namespace QuantConnect.Lean.Launcher.CustomCode
                         //Transactions.CancelOpenOrders(ticker);
                         orders[ticker].limitOrder = LimitOrder(ticker, quantit, pric, mess);
                         orders[ticker].TPCancel(close + "Main Limit order submitted, so residual: ");
-                        orders[ticker].highestSPYPrice = -1;
+                        orders[ticker].highestPrice = -1;
                         if (orders[ticker].slOrder != null)
                         {
                             orders[ticker].slOrder.Cancel(close + "Cancelling stop loss due to new main limit order being placed");
@@ -270,27 +278,27 @@ namespace QuantConnect.Lean.Launcher.CustomCode
                     }
 
                     // 5 > 4 e.g. bull, -3 > -4 e.g. bear
-                    if (Securities[ticker].Close * orders[ticker].bullBear > orders[ticker].highestSPYPrice * orders[ticker].bullBear)
+                    if (Securities[ticker].Close * orders[ticker].bullBear > orders[ticker].highestPrice * orders[ticker].bullBear)
                     {
 
-                        orders[ticker].highestSPYPrice = self.Securities[ticker].Close;
+                        orders[ticker].highestPrice = self.Securities[ticker].Close;
                         var updateFields = new UpdateOrderFields();
-                        updateFields.StopPrice = orders[ticker].highestSPYPrice * orders[ticker].bullBear * (1.00M - orders[ticker].stopOffset);
+                        updateFields.StopPrice = orders[ticker].highestPrice * orders[ticker].bullBear * (1.00M - orders[ticker].stopOffset);
                         if (orders[ticker].slOrder != null)
                             orders[ticker].slOrder.Update(updateFields);
                         orders[ticker].Report("; updateFields.StopPrice;" + updateFields.StopPrice.ToString());
                     }
                     //test to see if there exists TP quantity and slOrder
-                    if ((C.useTPLimit == false && orders[ticker].tpquantity == 0.0m) ||
-                        (C.useTPLimit == true && orders[ticker].tpOrder == null) ||
-                        orders[ticker].slOrder == null)
-                    {
-                        if (Portfolio.Invested == true && this.Securities[ticker].Holdings.Quantity != 0)
-                        {
-                            Liquidate(Securities[ticker].Symbol);
-                            Transactions.CancelOpenOrders(ticker);
-                        }
-                    }
+                    // if ((C.useTPLimit == false && orders[ticker].tpquantity == 0.0m) || 
+                    // 	(C.useTPLimit == true && orders[ticker].tpOrder == null) || 
+                    // 	orders[ticker].slOrder == null)
+                    // {
+                    //     if (Portfolio.Invested == true && this.Securities[ticker].Holdings.Quantity != 0)
+                    //     {
+                    //         Liquidate(Securities[ticker].Symbol);
+                    //         Transactions.CancelOpenOrders(ticker);
+                    //     }
+                    // }
                 }
             }
             foreach (var ticker in slice.Select(k => k.Key.Value))
