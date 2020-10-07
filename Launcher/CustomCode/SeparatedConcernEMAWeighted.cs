@@ -23,7 +23,7 @@
         {
             var updates = base.Update(algorithm, data);
             //return updates;
-            double? equal = 1.0 / ((SeparatedConcernEMAWeighted)algorithm).tickers.Count;
+            double? equal = 10.0 / (((SeparatedConcernEMAWeighted)algorithm).tickers.Count * 1.0);
             List<Insight> weighted = new List<Insight>();
             foreach (var update in updates)
             {
@@ -110,7 +110,7 @@
         public List<string> tickers = new List<string> { "GILD", "ABMD", "UNH", "ALXN", "BLK", "HFC", "KSU" };
         public override void Initialize()
         {
-            SetStartDate(2020, 4, 5);  //Set Start Date
+            SetStartDate(2015, 4, 5);  //Set Start Date
             SetCash(100000);             //Set Strategy Cash
 
 
@@ -118,7 +118,7 @@
 
             AddAlpha(new EmaCrossAlphaModelX(50, 200, Resolution.Hour));
 
-            SetExecution(new StandardDeviationExecutionModelX(60, 2, Resolution.Hour));
+            SetExecution(new StandardDeviationExecutionModelX(60, 0.75m, Resolution.Hour));
 
             //SetPortfolioConstruction(new EqualWeightingPortfolioConstructionModel());
 
