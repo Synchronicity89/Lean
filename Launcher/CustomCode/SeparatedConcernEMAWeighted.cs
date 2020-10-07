@@ -133,7 +133,7 @@
             var symbols = tickers.Select(t => QuantConnect.Symbol.Create(t, SecurityType.Equity, Market.USA)).ToArray();
             SetUniverseSelection(new LiquidETFUniverse());
 
-            SetUniverseSelection(new ManualUniverseSelectionModel(symbols));
+            //SetUniverseSelection(new ManualUniverseSelectionModel(symbols));
             //InsightsGenerated += SeparatedConcernEMAWeighted_InsightsGenerated;
 
         }
