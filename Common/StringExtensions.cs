@@ -28,6 +28,16 @@ namespace QuantConnect
         private static readonly IFormatProvider FormatProvider = CultureInfo;
         private static readonly StringComparison StringComparison = StringComparison.InvariantCulture;
 
+        public static string ToString<T>(this IConvertible value)
+        {
+            return value.ToString(CultureInfo);
+        }
+
+        public static string ToString<T>(this IConvertible value, string message)
+        {
+            return string.Format(CultureInfo, message, value);
+        }
+
         /// <summary>
         /// Converts the provided <paramref name="value"/> as <typeparamref name="T"/>
         /// using <see cref="CultureInfo"/>
