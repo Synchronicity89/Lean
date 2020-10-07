@@ -21,7 +21,32 @@
         public EmaCrossAlphaModelX(int fastPeriod = 12, int slowPeriod = 26, Resolution resolution = Resolution.Daily) : base(fastPeriod, slowPeriod, resolution) { }
         public override IEnumerable<Insight> Update(QCAlgorithm algorithm, Slice data)
         {
-            return base.Update(algorithm, data);
+            var updates = base.Update(algorithm, data);
+            //return updates;
+            double? equal = 1.0 / ((SeparatedConcernEMAWeighted)algorithm).tickers.Count;
+            List<Insight> weighted = new List<Insight>();
+            foreach (var update in updates)
+            {
+                Insight temp = null;
+                if (update.Weight.HasValue == false || update.Weight.Value == 0.0)
+                {
+                    temp = new Insight(
+                        update.Symbol,
+                        update.Period,
+                        update.Type,
+                        update.Direction,
+                        update.Magnitude,
+                        update.Confidence,
+                        update.SourceModel,
+                        equal);
+                }
+                else
+                {
+                    temp = update;
+                }
+                weighted.Add(temp);
+            }
+            return weighted;
         }
         public override void OnSecuritiesChanged(QCAlgorithm algorithm, SecurityChanges changes)
         {
@@ -31,7 +56,7 @@
 
     public class StandardDeviationExecutionModelX : StandardDeviationExecutionModel
     {
-        public StandardDeviationExecutionModelX(int period = 60, decimal deviations = 2, Resolution resolution = Resolution.Minute) : base(period, deviations, resolution) { }
+        public StandardDeviationExecutionModelX(int period = 60, decimal deviations = 2, Resolution resolution = Resolution.Hour) : base(period, deviations, resolution) { }
         public override void Execute(QCAlgorithm algorithm, IPortfolioTarget[] targets)
         {
             base.Execute(algorithm, targets);
@@ -52,6 +77,15 @@
         public override void OnSecuritiesChanged(QCAlgorithm algorithm, SecurityChanges changes)
         {
             base.OnSecuritiesChanged(algorithm, changes);
+        }
+        protected override Dictionary<Insight, double> DetermineTargetPercent(List<Insight> activeInsights)
+        {
+            return base.DetermineTargetPercent(activeInsights);
+        }
+        protected override double GetValue(Insight insight)
+        {
+            return base.GetValue(insight);
+            //return insight.Score.Direction;
         }
     }
 
@@ -80,21 +114,27 @@
             SetCash(100000);             //Set Strategy Cash
 
 
-            //         // AddEquity("SPY", Resolution.Minute);
+            //         // AddEquity("SPY", Resolution.Hour);
 
-            AddAlpha(new EmaCrossAlphaModel(50, 200, Resolution.Minute));
+            AddAlpha(new EmaCrossAlphaModelX(50, 200, Resolution.Hour));
 
-            SetExecution(new StandardDeviationExecutionModelX(60, 2, Resolution.Minute));
+            SetExecution(new StandardDeviationExecutionModelX(60, 2, Resolution.Hour));
+
+            //SetPortfolioConstruction(new EqualWeightingPortfolioConstructionModel());
 
             SetPortfolioConstruction(new InsightWeightingPortfolioConstructionModelX());
 
-            SetRiskManagement(new MaximumUnrealizedProfitPercentPerSecurityX(0.03m));
+            //SetRiskManagement(new MaximumUnrealizedProfitPercentPerSecurityX(0.03m));
+            SetRiskManagement(new MaximumDrawdownPercentPerSecurity(0.09m));
 
-            UniverseSettings.Resolution = Resolution.Minute;
+
+            UniverseSettings.Resolution = Resolution.Hour;
 
             var symbols = tickers.Select(t => QuantConnect.Symbol.Create(t, SecurityType.Equity, Market.USA)).ToArray();
+            SetUniverseSelection(new LiquidETFUniverse());
+
             SetUniverseSelection(new ManualUniverseSelectionModel(symbols));
-            InsightsGenerated += SeparatedConcernEMAWeighted_InsightsGenerated;
+            //InsightsGenerated += SeparatedConcernEMAWeighted_InsightsGenerated;
 
         }
 
@@ -147,23 +187,28 @@
             }
         }
 
-        /// OnData event is the primary entry point for your algorithm. Each new data point will be pumped in here.
-        /// Slice object keyed by symbol containing the stock data
+        // OnData event is the primary entry point for your algorithm. Each new data point will be pumped in here.
+        // Slice object keyed by symbol containing the stock data
         public override void OnData(Slice data)
         {
-            //foreach (var target in PortfolioConstruction.CreateTargets(this, insights.Values.ToArray()))
-            foreach (var insight in insights)
-            {
-                if (data.ContainsKey(insight.Value.Symbol) == false) continue;
-                var cash = Portfolio.Cash;
-                var holding = Portfolio[insight.Value.Symbol];
-                //holding.SetHoldings(holding.Price, Portfolio.GetMarginRemaining(insight.Value.Symbol, ItoODir(insight.Value.Direction)));
-                if (insight.Value.Direction == InsightDirection.Up)
-                {
-                    SetHoldings(insight.Value.Symbol, 1.0m / tickers.Count);
-                    //Debug(insight.Value.Symbol.Value + ": before; " + cash + ", after; " +  Portfolio.Cash);
-                }
-            }
+            // //foreach (var target in PortfolioConstruction.CreateTargets(this, insights.Values.ToArray()))
+            // foreach(var insight in insights)
+            // { 
+            // 	if(data.ContainsKey(insight.Value.Symbol) == false) continue;
+            //     var cash = Portfolio.Cash;
+            //     var holding = Portfolio[insight.Value.Symbol];
+            //     //holding.SetHoldings(holding.Price, Portfolio.GetMarginRemaining(insight.Value.Symbol, ItoODir(insight.Value.Direction)));
+            //     if(insight.Value.Direction == InsightDirection.Up)
+            //     {
+            //     	SetHoldings(insight.Value.Symbol, 1.0m/tickers.Count);
+            //     	//Debug(insight.Value.Symbol.Value + ": before; " + cash + ", after; " +  Portfolio.Cash);
+            //     }
+            //     if(insight.Value.Direction == InsightDirection.Down)
+            //     {
+            //     	SetHoldings(insight.Value.Symbol, -1.0m/tickers.Count);
+            //     	//Debug(insight.Value.Symbol.Value + ": before; " + cash + ", after; " +  Portfolio.Cash);
+            //     }
+            // }
         }
 
         public override void OnWarmupFinished()
