@@ -116,6 +116,7 @@
     <Compile Include="Alphas\EmaCrossAlphaModel.cs" />
     <Compile Include="Alphas\BasePairsTradingAlphaModel.cs" />
     <Compile Include="Alphas\RsiAlphaModel.cs" />
+    <Compile Include="Alphas\WeightedEmaCrossAlphaModel.cs" />
     <Compile Include="Execution\StandardDeviationExecutionModel.cs" />
     <Compile Include="Execution\VolumeWeightedAveragePriceExecutionModel.cs" />
     <Compile Include="NotifiedSecurityChanges.cs" />

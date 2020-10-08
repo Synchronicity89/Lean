@@ -16,43 +16,43 @@
     using System.Threading.Tasks;
 
 
-    public class EmaCrossAlphaModelX : EmaCrossAlphaModel
-    {
-        public EmaCrossAlphaModelX(int fastPeriod = 12, int slowPeriod = 26, Resolution resolution = Resolution.Daily) : base(fastPeriod, slowPeriod, resolution) { }
-        public override IEnumerable<Insight> Update(QCAlgorithm algorithm, Slice data)
-        {
-            var updates = base.Update(algorithm, data);
-            //return updates;
-            double? equal = 10.0 / (((SeparatedConcernEMAWeighted)algorithm).tickers.Count * 1.0);
-            List<Insight> weighted = new List<Insight>();
-            foreach (var update in updates)
-            {
-                Insight temp = null;
-                if (update.Weight.HasValue == false || update.Weight.Value == 0.0)
-                {
-                    temp = new Insight(
-                        update.Symbol,
-                        update.Period,
-                        update.Type,
-                        update.Direction,
-                        update.Magnitude,
-                        update.Confidence,
-                        update.SourceModel,
-                        equal);
-                }
-                else
-                {
-                    temp = update;
-                }
-                weighted.Add(temp);
-            }
-            return weighted;
-        }
-        public override void OnSecuritiesChanged(QCAlgorithm algorithm, SecurityChanges changes)
-        {
-            base.OnSecuritiesChanged(algorithm, changes);
-        }
-    }
+    // public class EmaCrossAlphaModelX : EmaCrossAlphaModel
+    // {
+    //     public EmaCrossAlphaModelX(int fastPeriod = 12, int slowPeriod = 26, Resolution resolution = Resolution.Daily) : base(fastPeriod, slowPeriod, resolution) { }
+    //     public override IEnumerable<Insight> Update(QCAlgorithm algorithm, Slice data)
+    //     {
+    //         var updates = base.Update(algorithm, data);
+    //         //return updates;
+    //         double? equal = 10.0 / (((SeparatedConcernEMAWeighted)algorithm).tickers.Count * 1.0);
+    //         List<Insight> weighted = new List<Insight>();
+    //         foreach (var update in updates)
+    //         {
+    //             Insight temp = null;
+    //             if (update.Weight.HasValue == false || update.Weight.Value == 0.0)
+    //             {
+    //                 temp = new Insight(
+    //                     update.Symbol,
+    //                     update.Period,
+    //                     update.Type,
+    //                     update.Direction,
+    //                     update.Magnitude,
+    //                     update.Confidence,
+    //                     update.SourceModel,
+    //                     equal);
+    //             }
+    //             else
+    //             {
+    //                 temp = update;
+    //             }
+    //             weighted.Add(temp);
+    //         }
+    //         return weighted;
+    //     }
+    //     public override void OnSecuritiesChanged(QCAlgorithm algorithm, SecurityChanges changes)
+    //     {
+    //         base.OnSecuritiesChanged(algorithm, changes);
+    //     }
+    // }
 
     public class StandardDeviationExecutionModelX : StandardDeviationExecutionModel
     {
@@ -116,7 +116,7 @@
 
             //         // AddEquity("SPY", Resolution.Hour);
 
-            AddAlpha(new EmaCrossAlphaModelX(50, 200, Resolution.Hour));
+            AddAlpha(new WeightedEmaCrossAlphaModel(50, 200, Resolution.Hour));
 
             SetExecution(new StandardDeviationExecutionModelX(60, 0.75m, Resolution.Hour));
 
