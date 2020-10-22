@@ -6,12 +6,13 @@
   // two predefined environments, 'backtesting' and 'live', feel free
   // to add more!
 
-  //QCLean: "environment": "backtesting", // "live-paper", "backtesting", "live-interactive", "live-interactive-iqfeed"
-  "environment": "backtesting-desktop", // "live-paper", "backtesting", "live-interactive", "live-interactive-iqfeed"
+  "environment": "backtesting", // "live-paper", "backtesting", "live-interactive", "live-interactive-iqfeed"
+  //"environment": "backtesting-desktop", // "live-paper", "backtesting", "live-interactive", "live-interactive-iqfeed"
 
   // algorithm class selector
-  //QCLean: "algorithm-type-name": "BasicTemplateFrameworkAlgorithm",
-  "algorithm-type-name": "BasicTemplateOptionBullPutSpreadExample",
+  //"algorithm-type-name": "BasicTemplateFrameworkAlgorithm",
+  "algorithm-type-name": "LimitOrderStopLossTakeProfit",
+  //"algorithm-type-name": "BasicTemplateOptionBullPutSpreadExample",
 
   // Algorithm language selector - options CSharp, FSharp, VisualBasic, Python, Java
   "algorithm-language": "CSharp",
@@ -40,8 +41,8 @@
   "api-handler": "QuantConnect.Api.Api",
   "map-file-provider": "QuantConnect.Data.Auxiliary.LocalDiskMapFileProvider",
   "factor-file-provider": "QuantConnect.Data.Auxiliary.LocalDiskFactorFileProvider",
-  //QCLean: "data-provider": "QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider",
-  "data-provider": "QuantConnect.Lean.Engine.DataFeeds.ApiDataProviderDownload",
+  "data-provider": "QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider",
+  //"data-provider": "QuantConnect.Lean.Engine.DataFeeds.ApiDataProviderDownload",
   "alpha-handler": "QuantConnect.Lean.Engine.Alphas.DefaultAlphaHandler",
   "data-channel-provider": "DataChannelProvider",
   "object-store": "QuantConnect.Lean.Engine.Storage.LocalObjectStore",
@@ -118,7 +119,7 @@
   "bitfinex-api-secret": "",
   "bitfinex-api-key": "",
 
-    // binance configuration
+  // binance configuration
   "binance-api-secret": "",
   "binance-api-key": "",
 
