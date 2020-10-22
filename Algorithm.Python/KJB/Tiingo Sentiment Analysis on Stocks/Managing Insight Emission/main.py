@@ -1,0 +1,84 @@
+from QuantConnect.Data.Custom.Tiingo import *
+from datetime import datetime, timedelta
+import numpy as np
+import sys, os
+
+class TiingoNewsSentimentAlgorithm(QCAlgorithm):
+
+    def Initialize(self):
+        self.SetStartDate(2016, 11, 1)
+        self.SetEndDate(2017, 3, 1)  
+        symbols = [Symbol.Create("AAPL", SecurityType.Equity, Market.USA), 
+        Symbol.Create("NKE", SecurityType.Equity, Market.USA)]
+        self.SetUniverseSelection(ManualUniverseSelectionModel(symbols))
+        self.SetAlpha(NewsSentimentAlphaModel())
+        self.SetPortfolioConstruction(EqualWeightingPortfolioConstructionModel()) 
+        self.SetExecution(ImmediateExecutionModel()) 
+        self.SetRiskManagement(NullRiskManagementModel())
+
+class NewsData():
+    def __init__(self, symbol):
+        self.Symbol = symbol
+        self.Window = RollingWindow[float](100)  
+        
+class NewsSentimentAlphaModel(AlphaModel):
+    
+    def __init__(self): 
+        self.newsData = {}
+
+        self.wordScores = {
+            "bad": -0.5, "good": 0.5, "negative": -0.5, 
+            "great": 0.5, "growth": 0.5, "fail": -0.5, 
+            "failed": -0.5, "success": 0.5, "nailed": 0.5,
+            "beat": 0.5, "missed": -0.5, "profitable": 0.5,
+            "beneficial": 0.5, "right": 0.5, "positive": 0.5, 
+            "large":0.5, "attractive": 0.5, "sound": 0.5, 
+            "excellent": 0.5, "wrong": -0.5, "unproductive": -0.5, 
+            "lose": -0.5, "missing": -0.5, "mishandled": -0.5, 
+            "un_lucrative": -0.5, "up": 0.5, "down": -0.5,
+            "unproductive": -0.5, "poor": -0.5, "wrong": -0.5,
+            "worthwhile": 0.5, "lucrative": 0.5, "solid": 0.5
+        } 
+                
+    def Update(self, algorithm, data):
+        threshold = 5
+        insights = []
+        news = data.Get(TiingoNews)
+        if news is None or news.Values is None: algorithm.Quit("news is None or news.Values is None")
+
+        for article in news.Values:
+            words = article.Description.lower().split(" ")
+            if article is None or words is None: algorithm.Quit("article is None or words is None")
+            score = sum([self.wordScores[word] for word in words
+                if word in self.wordScores])
+            
+            #1. Get the underlying symbol and save to the variable symbol
+            symbol = article.Symbol.Underlying
+            if symbol is None: algorithm.Quit("symbol is None")
+            
+            #2. Add scores to the rolling window associated with its newsData symbol
+            news[symbol].Window.Add(data)
+            
+            #3. Sum the rolling window scores, save to sentiment
+            # If sentiment aggregate score for the time period is greater than 5, emit an up insight
+            sentiment = sum(self.newsData[symbol].Window) 
+            if sentiment > threshold:
+                insights.append(Insight.Price(symbol, timedelta(1), InsightDirection.Up))
+
+        return insights
+    
+    def OnSecuritiesChanged(self, algorithm, changes):
+        try:
+            for security in changes.AddedSecurities:
+                symbol = security.Symbol
+                newsAsset = algorithm.AddData(TiingoNews, symbol)
+                self.newsData[symbol] = NewsData(newsAsset.Symbol)
+    
+            for security in changes.RemovedSecurities:
+                newsData = self.newsData.pop(security.Symbol, None)
+                if newsData is not None:
+                    algorithm.RemoveSecurity(newsData.Symbol)
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            algorithm.Log(f"type {str(exc_type)}, name {str(fname)}, line {str(exc_tb.tb_lineno)}")

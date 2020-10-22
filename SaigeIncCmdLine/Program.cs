@@ -10,8 +10,8 @@ namespace SaigeIncCmdLine
     {
         static void Main(string[] args)
         {
-            BootCampTask bootCampTask = new BootCampTask();
-            bootCampTask.Initialize();
+            //BootCampTask bootCampTask = new BootCampTask();
+            //bootCampTask.Initialize();
             //bootCampTask.OnData();
         }
     }
