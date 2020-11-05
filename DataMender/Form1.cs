@@ -38,15 +38,40 @@ namespace DataMender
 
 
             }
+
+            foreach(var dd in delets)
+            {
+                txtOutput.Text += "rmdir " + dd.FullName + Environment.NewLine;
+            }
         }
+        List<DirectoryInfo> delets = new List<DirectoryInfo>();
+
         private void RecurseFolder(DirectoryInfo dir, List<FileInfo> files)
         {
-            foreach (var sysInfo in dir.GetFileSystemInfos())
+            var s = dir.GetFileSystemInfos();
+            txtOutput.Text += dir.FullName + ": " + s.Length + Environment.NewLine;
+            DateTime prev = DateTime.MinValue;
+            if (dir.Name.Length == 3 && dir.Parent.Name == "minute" && dir.Parent.Parent.Name == "usa" && s.Length == 0)
             {
-                txtOutput.Text += sysInfo.FullName + Environment.NewLine;
-                if(sysInfo is FileInfo)
+                delets.Add(dir);
+            }
+
+            foreach (var sysInfo in s.OrderBy(n => n.Name))
+            {
+                //txtOutput.Text += sysInfo.FullName + Environment.NewLine;
+                if (sysInfo is FileInfo)
                 {
-                    files.Add(sysInfo as FileInfo);
+                    if (dir.Name.Length == 3 && dir.Parent.Name == "minute" && dir.Parent.Parent.Name == "usa")
+                    {
+                        var n = sysInfo.Name.Substring(0, 8);
+                        DateTime dt = new DateTime(int.Parse(n.Substring(0, 4)), int.Parse(n.Substring(4, 2)), int.Parse(n.Substring(6, 2)));
+                        //files.Add(sysInfo as FileInfo);
+                        if (dt - prev > TimeSpan.FromDays(4))
+                        {
+                            txtOutput.Text += dt.ToString() + " - " + prev.ToString() + " = " + (dt - prev).ToString() + Environment.NewLine;
+                        }
+                        prev = dt;
+                    }
                 }
                 else
                 {

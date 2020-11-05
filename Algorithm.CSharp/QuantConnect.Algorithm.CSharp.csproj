@@ -138,6 +138,9 @@
     </When>
   </Choose>
   <ItemGroup>
+    <Compile Include="..\..\selfreplicatingmemes\synchronicity89\CompositeAlphaModelS89.cs">
+      <Link>S89\CompositeAlphaModelS89.cs</Link>
+    </Compile>
     <Compile Include="..\..\selfreplicatingmemes\synchronicity89\LimitOrderStopLossTakeProfit.cs">
       <Link>S89\LimitOrderStopLossTakeProfit.cs</Link>
     </Compile>
@@ -147,6 +150,8 @@
     <Compile Include="AddAlphaModelAlgorithm.cs" />
     <Compile Include="CustomBuyingPowerModelAlgorithm.cs" />
     <Compile Include="AddOptionContractExpiresRegressionAlgorithm.cs" />
+    <Compile Include="S89\CostOfLivingAlphaModel.cs" />
+    <Compile Include="S89\EquityHighLowAlphaModel.cs" />
     <Compile Include="S89\StandardDeviationExperiment.cs" />
     <Compile Include="ScaledFillForwardDataRegressionAlgorithm.cs" />
     <Compile Include="DailyHistoryForDailyResolutionRegressionAlgorithm.cs" />
