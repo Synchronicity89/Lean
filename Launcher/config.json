@@ -10,10 +10,10 @@
   //"environment": "backtesting-desktop", // "live-paper", "backtesting", "live-interactive", "live-interactive-iqfeed"
 
   // algorithm class selector
-  //"algorithm-type-name": "BasicTemplateAlgorithm",
+  "algorithm-type-name": "BasicTemplateAlgorithm",
   //"algorithm-type-name": "LimitOrderStopLossTakeProfit",
   //"algorithm-type-name": "BasicTemplateOptionBullPutSpreadExample",
-  "algorithm-type-name": "StandardDeviationExperiment",
+  //"algorithm-type-name": "StandardDeviationExperiment",
   // Algorithm language selector - options CSharp, FSharp, VisualBasic, Python, Java
   "algorithm-language": "CSharp",
 

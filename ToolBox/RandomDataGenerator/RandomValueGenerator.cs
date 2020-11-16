@@ -50,18 +50,26 @@ namespace QuantConnect.ToolBox.RandomDataGenerator
             return _random.NextDouble() <= percentOddsForTrue/100;
         }
 
+        private List<string> tickers = new List<string> { "SJX", "SKJ" , "SKX", "SNQ", "SOV", "SPJ", "STY", "SVX", "SWK", "SXC", "SXM", "SYX", "TAL", "TDY", "TER", "TFB", "TFS", "THH", "TKM", "TLB", "TMC", "TPO", "TQL", "TRW", "TSO", "TWE", "TWT", "TWX", "UJP", "UJQ", "ULI", "ULU", "UMX", "UQF", "UQI", "UUL", "UVF", "VAL", "VAW", "VBP", "VFC", "VFO", "VGJ", "VJQ", "VMG", "VML", "VNB", "VQP", "VTK", "VUI", "VUT", "VXG", "VYN", "WDG", "WDI", "WFU", "WGI", "WGP", "WLF", "WMS", "WON", "WOS", "WQV", "WVK", "WXB", "WXG", "WXN", "XDG", "XEH", "XEJ", "XHK", "XJP", "XKE", "XKK", "XOS", "XPN", "XPY", "XRV", "XSG", "XVQ", "XVS", "XYD", "YCK", "YGA", "YGF", "YGY", "YHA", "YIK", "YIU", "YJK", "YNV", "YQL", "YRH", "YRU", "YUT" };
+        private int tickerIndex = 0;
+
         public virtual string NextUpperCaseString(int minLength, int maxLength)
         {
-            var str = string.Empty;
-            var length = _random.Next(minLength, maxLength);
-            for (int i = 0; i < length; i++)
-            {
-                // A=65, Z=90
-                var c = (char)_random.Next(65, 90);
-                str += c;
-            }
+            //hack start
+            if (minLength != 3 || maxLength != 3) throw new Exception("Hack can't handle anything except 3");
+            if (tickerIndex > tickers.Count) throw new Exception("Hack not expecting more than tickers.Count");
+            return tickers[tickerIndex++];
+            //hack end
+            //var str = string.Empty;
+            //var length = _random.Next(minLength, maxLength);
+            //for (int i = 0; i < length; i++)
+            //{
+            //    // A=65, Z=90
+            //    var c = (char)_random.Next(65, 90);
+            //    str += c;
+            //}
 
-            return str;
+            //return str;
         }
 
         public virtual decimal NextPrice(SecurityType securityType, string market, decimal referencePrice, decimal maximumPercentDeviation)

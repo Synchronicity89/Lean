@@ -195,7 +195,7 @@ namespace QuantConnect.Tests.Algorithm.Framework.Execution
         }
 
         [TestCase(Language.CSharp)]
-        public void PartiallyFilledOrdersAreTakenIntoAccountKJB(Language language)
+        public void PartiallyFilledOrdersAreTakenIntoAccountS89(Language language)
         {
             var actualOrdersSubmitted = new List<SubmitOrderRequest>();
 

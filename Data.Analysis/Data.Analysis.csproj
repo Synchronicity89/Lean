@@ -1,0 +1,207 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="..\corefxlab\LICENSE" Link="LICENSE">
+      <PackagePath>\</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+    <Content Include="..\corefxlab\THIRD-PARTY-NOTICES.TXT" Link="THIRD-PARTY-NOTICES.TXT">
+      <PackagePath>\</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="C:\Users\baker\.nuget\packages\microsoft.dotnet.arcade.sdk\6.0.0-beta.20552.5\tools\Assets\DotNetPackageIcon.png" Link="DotNetPackageIcon.png">
+      <PackagePath>$(PackageIcon)</PackagePath>
+      <Visible>false</Visible>
+      <Pack>true</Pack>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Apache.Arrow" Version="2.0.0" />
+    <PackageReference Include="Microsoft.ML.DataView" Version="1.5.2" />
+    <PackageReference Include="System.Buffers" Version="4.5.1" />
+    <PackageReference Include="System.Memory" Version="4.5.4" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.7.1" />
+    <PackageReference Include="System.Text.Encoding" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Converters.cs">
+      <DependentUpon>Converters.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="DataFrame.BinaryOperations.cs">
+      <DependentUpon>DataFrame.BinaryOperations.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="DataFrame.BinaryOperators.cs">
+      <DependentUpon>DataFrame.BinaryOperators.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="DataFrameColumn.BinaryOperations.cs">
+      <DependentUpon>DataFrameColumn.BinaryOperations.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="DataFrameColumn.BinaryOperators.cs">
+      <DependentUpon>DataFrameColumn.BinaryOperators.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="DataFrameColumn.Computations.cs">
+      <DependentUpon>DataFrameColumn.Computations.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="PrimitiveColumnContainer.BinaryOperations.cs">
+      <DependentUpon>PrimitiveColumnContainer.BinaryOperations.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="PrimitiveDataFrameColumn.BinaryOperationAPIs.ExplodedColumns.cs">
+      <DependentUpon>PrimitiveDataFrameColumn.BinaryOperationAPIs.ExplodedColumns.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="PrimitiveDataFrameColumn.BinaryOperationImplementations.Exploded.cs">
+      <DependentUpon>PrimitiveDataFrameColumn.BinaryOperationImplementations.Exploded.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="PrimitiveDataFrameColumn.BinaryOperations.cs">
+      <DependentUpon>PrimitiveDataFrameColumn.BinaryOperations.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="PrimitiveDataFrameColumn.BinaryOperators.cs">
+      <DependentUpon>PrimitiveDataFrameColumn.BinaryOperators.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="PrimitiveDataFrameColumn.Computations.cs">
+      <DependentUpon>PrimitiveDataFrameColumn.Computations.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="PrimitiveDataFrameColumn.ReversedBinaryOperations.cs">
+      <DependentUpon>PrimitiveDataFrameColumn.ReversedBinaryOperations.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="PrimitiveDataFrameColumnArithmetic.cs">
+      <DependentUpon>PrimitiveDataFrameColumnArithmetic.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="PrimitiveDataFrameColumnComputations.cs">
+      <DependentUpon>PrimitiveDataFrameColumnComputations.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="strings.Designer.cs">
+      <DependentUpon>Strings.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="strings.resx">
+      <CustomToolNamespace>Microsoft.Data</CustomToolNamespace>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Converters.tt">
+      <LastGenOutput>Converters.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="DataFrame.BinaryOperations.tt">
+      <LastGenOutput>DataFrame.BinaryOperations.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="DataFrame.BinaryOperators.tt">
+      <LastGenOutput>DataFrame.BinaryOperators.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="DataFrameColumn.BinaryOperations.tt">
+      <LastGenOutput>DataFrameColumn.BinaryOperations.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="DataFrameColumn.BinaryOperators.tt">
+      <LastGenOutput>DataFrameColumn.BinaryOperators.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="DataFrameColumn.Computations.tt">
+      <LastGenOutput>DataFrameColumn.Computations.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="PrimitiveColumnContainer.BinaryOperations.tt">
+      <LastGenOutput>PrimitiveColumnContainer.BinaryOperations.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="PrimitiveDataFrameColumn.BinaryOperationAPIs.ExplodedColumns.tt">
+      <LastGenOutput>PrimitiveDataFrameColumn.BinaryOperationAPIs.ExplodedColumns.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="PrimitiveDataFrameColumn.BinaryOperationImplementations.Exploded.tt">
+      <LastGenOutput>PrimitiveDataFrameColumn.BinaryOperationImplementations.Exploded.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="PrimitiveDataFrameColumn.BinaryOperations.Combinations.tt">
+      <LastGenOutput>PrimitiveDataFrameColumn.BinaryOperations.Combinations.ttinclude</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="PrimitiveDataFrameColumn.BinaryOperations.Combinations.ttinclude">
+      <DependentUpon>PrimitiveDataFrameColumn.BinaryOperations.Combinations.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </None>
+    <None Update="PrimitiveDataFrameColumn.BinaryOperations.tt">
+      <LastGenOutput>PrimitiveDataFrameColumn.BinaryOperations.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="PrimitiveDataFrameColumn.BinaryOperators.tt">
+      <LastGenOutput>PrimitiveDataFrameColumn.BinaryOperators.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="PrimitiveDataFrameColumn.Computations.tt">
+      <LastGenOutput>PrimitiveDataFrameColumn.Computations.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="PrimitiveDataFrameColumn.ReversedBinaryOperations.tt">
+      <LastGenOutput>PrimitiveDataFrameColumn.ReversedBinaryOperations.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="PrimitiveDataFrameColumnArithmetic.tt">
+      <LastGenOutput>PrimitiveDataFrameColumnArithmetic.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="PrimitiveDataFrameColumnComputations.tt">
+      <LastGenOutput>PrimitiveDataFrameColumnComputations.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+
+</Project>

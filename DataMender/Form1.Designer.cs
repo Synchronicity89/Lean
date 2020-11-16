@@ -29,6 +29,8 @@
         private void InitializeComponent()
         {
             this.txtOutput = new System.Windows.Forms.TextBox();
+            this.btnOrdersVsPositions = new System.Windows.Forms.Button();
+            this.btnLoad = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // txtOutput
@@ -36,17 +38,39 @@
             this.txtOutput.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtOutput.Location = new System.Drawing.Point(13, 91);
+            this.txtOutput.Location = new System.Drawing.Point(13, 78);
             this.txtOutput.Multiline = true;
             this.txtOutput.Name = "txtOutput";
-            this.txtOutput.Size = new System.Drawing.Size(956, 494);
+            this.txtOutput.Size = new System.Drawing.Size(996, 575);
             this.txtOutput.TabIndex = 0;
+            // 
+            // btnOrdersVsPositions
+            // 
+            this.btnOrdersVsPositions.Location = new System.Drawing.Point(13, 13);
+            this.btnOrdersVsPositions.Name = "btnOrdersVsPositions";
+            this.btnOrdersVsPositions.Size = new System.Drawing.Size(172, 23);
+            this.btnOrdersVsPositions.TabIndex = 1;
+            this.btnOrdersVsPositions.Text = "Orders vs. Positions";
+            this.btnOrdersVsPositions.UseVisualStyleBackColor = true;
+            this.btnOrdersVsPositions.Click += new System.EventHandler(this.btnOrdersVsPositions_Click);
+            // 
+            // btnLoad
+            // 
+            this.btnLoad.Location = new System.Drawing.Point(219, 13);
+            this.btnLoad.Name = "btnLoad";
+            this.btnLoad.Size = new System.Drawing.Size(75, 23);
+            this.btnLoad.TabIndex = 2;
+            this.btnLoad.Text = "Load";
+            this.btnLoad.UseVisualStyleBackColor = true;
+            this.btnLoad.Click += new System.EventHandler(this.btnLoad_Click);
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(981, 584);
+            this.ClientSize = new System.Drawing.Size(1021, 665);
+            this.Controls.Add(this.btnLoad);
+            this.Controls.Add(this.btnOrdersVsPositions);
             this.Controls.Add(this.txtOutput);
             this.Name = "Form1";
             this.Text = "Form1";
@@ -59,6 +83,8 @@
         #endregion
 
         private System.Windows.Forms.TextBox txtOutput;
+        private System.Windows.Forms.Button btnOrdersVsPositions;
+        private System.Windows.Forms.Button btnLoad;
     }
 }
 

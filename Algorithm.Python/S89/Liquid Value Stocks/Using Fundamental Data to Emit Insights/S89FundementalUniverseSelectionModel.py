@@ -18,7 +18,7 @@ AddReference("QuantConnect.Algorithm.Framework")
 
 from QuantConnect.Data.UniverseSelection import *
 
-class FundamentalUniverseSelectionModelKJB:
+class FundamentalUniverseSelectionModelS89:
     '''Provides a base class for defining equity coarse/fine fundamental selection models'''
     
     def __init__(self,

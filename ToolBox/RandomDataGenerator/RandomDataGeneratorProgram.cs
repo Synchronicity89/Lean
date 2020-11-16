@@ -188,7 +188,16 @@ namespace QuantConnect.ToolBox.RandomDataGenerator
 
                         foreach (var item in aggregators)
                         {
-                            tick.Value = tick.Value / dividendsSplitsMaps.FinalSplitFactor;
+                            try
+                            { 
+                                tick.Value = tick.Value / dividendsSplitsMaps.FinalSplitFactor;
+                            }
+                            catch(Exception ex)
+                            {
+                                var m = ex.Message;
+                                output.Warn.WriteLine("S89 error: " + m);
+                                throw;
+                            }
                             item.Consolidator.Update(tick);
                         }
 

@@ -1,6 +1,6 @@
 from datetime import timedelta
 from QuantConnect.Data.UniverseSelection import * 
-from KJBFundementalUniverseSelectionModel import *  
+from S89FundementalUniverseSelectionModel import *  
 
 class LiquidValueStocks(QCAlgorithm):
 
@@ -19,7 +19,7 @@ class LiquidValueStocks(QCAlgorithm):
         self.SetPortfolioConstruction(EqualWeightingPortfolioConstructionModel())
         self.SetExecution(ImmediateExecutionModel())
 
-class LiquidValueUniverseSelectionModel(FundamentalUniverseSelectionModelKJB):
+class LiquidValueUniverseSelectionModel(FundamentalUniverseSelectionModelS89):
     
     def __init__(self):
         super().__init__(True, None, None)
