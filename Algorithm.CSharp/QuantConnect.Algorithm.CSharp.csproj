@@ -150,6 +150,7 @@
     <Compile Include="AddAlphaModelAlgorithm.cs" />
     <Compile Include="CustomBuyingPowerModelAlgorithm.cs" />
     <Compile Include="AddOptionContractExpiresRegressionAlgorithm.cs" />
+    <Compile Include="AltData\QuiverWallStreetBetsDataAlgorithm.cs" />
     <Compile Include="S89\CostOfLivingAlphaModel.cs" />
     <Compile Include="S89\EquityHighLowAlphaModel.cs" />
     <Compile Include="S89\StandardDeviationExperiment.cs" />
