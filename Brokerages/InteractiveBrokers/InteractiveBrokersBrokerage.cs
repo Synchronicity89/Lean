@@ -269,6 +269,9 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
             _client.OpenOrder += HandleOpenOrder;
             _client.OpenOrderEnd += HandleOpenOrderEnd;
             _client.UpdateAccountValue += HandleUpdateAccountValue;
+            _client.AccountSummary += HandleAccountSummary;
+            _client.ManagedAccounts += HandleManagedAccounts;
+            _client.FamilyCodes += HandleFamilyCodes;
             _client.ExecutionDetails += HandleExecutionDetails;
             _client.CommissionReport += HandleCommissionReport;
             _client.Error += HandleError;
@@ -723,6 +726,11 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
                     Log.Trace("InteractiveBrokersBrokerage.Connect(): IB next valid id received.");
 
                     if (!_client.Connected) throw new Exception("InteractiveBrokersBrokerage.Connect(): Connection returned but was not in connected state.");
+
+                    // request account information for logging purposes
+                    _client.ClientSocket.reqAccountSummary(GetNextId(), "All", "AccountType");
+                    _client.ClientSocket.reqManagedAccts();
+                    _client.ClientSocket.reqFamilyCodes();
 
                     if (IsFinancialAdvisor)
                     {
@@ -3081,6 +3089,24 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
             }
         }
 
+        private void HandleAccountSummary(object sender, IB.AccountSummaryEventArgs e)
+        {
+            Log.Trace($"InteractiveBrokersBrokerage.HandleAccountSummary(): Request id: {e.RequestId}, Account: {e.Account}, Tag: {e.Tag}, Value: {e.Value}, Currency: {e.Currency}");
+        }
+
+        private void HandleFamilyCodes(object sender, IB.FamilyCodesEventArgs e)
+        {
+            foreach (var familyCode in e.FamilyCodes)
+            {
+                Log.Trace($"InteractiveBrokersBrokerage.HandleFamilyCodes(): Account id: {familyCode.AccountID}, Family code: {familyCode.FamilyCodeStr}");
+            }
+        }
+
+        private void HandleManagedAccounts(object sender, IB.ManagedAccountsEventArgs e)
+        {
+            Log.Trace($"InteractiveBrokersBrokerage.HandleManagedAccounts(): Account list: {e.AccountList}");
+        }
+
         private readonly ConcurrentDictionary<Symbol, int> _subscribedSymbols = new ConcurrentDictionary<Symbol, int>();
         private readonly ConcurrentDictionary<int, SubscriptionEntry> _subscribedTickers = new ConcurrentDictionary<int, SubscriptionEntry>();
         private readonly Dictionary<Symbol, Symbol> _underlyings = new Dictionary<Symbol, Symbol>();
@@ -3117,5 +3143,4 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
             105, 106, 107, 109, 110, 111, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 129, 131, 132, 133, 134, 135, 136, 137, 140, 141, 146, 147, 148, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 163, 167, 168, 201, 313,314,315,325,328,329,334,335,336,337,338,339,340,341,342,343,345,347,348,349,350,352,353,355,356,358,359,360,361,362,363,364,367,368,369,370,371,372,373,374,375,376,377,378,379,380,382,383,387,388,389,390,391,392,393,394,395,396,397,398,400,401,402,403,405,406,407,408,409,410,411,412,413,417,418,419,421,423,424,427,428,429,433,434,435,436,437,439,440,441,442,443,444,445,446,447,448,449,10002,10006,10007,10008,10009,10010,10011,10012,10014,10020,2102
         };
     }
-
 }
