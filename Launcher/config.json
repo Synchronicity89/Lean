@@ -10,7 +10,8 @@
   //"environment": "backtesting-desktop", // "live-paper", "backtesting", "live-interactive", "live-interactive-iqfeed"
 
   // algorithm class selector
-  "algorithm-type-name": "BasicTemplateAlgorithm",
+  //"algorithm-type-name": "BasicTemplateAlgorithm",
+  "algorithm-type-name": "G_ScoreInvesting",
   //"algorithm-type-name": "LimitOrderStopLossTakeProfit",
   //"algorithm-type-name": "BasicTemplateOptionBullPutSpreadExample",
   //"algorithm-type-name": "StandardDeviationExperiment",

@@ -90,6 +90,15 @@ namespace DataMenderWpf
             }
         }
 
+        private void btnExperiments_Click(object sender, RoutedEventArgs e)
+        {
+            var ll = new LinkedList<double>();
+            ll.AddLast(1.0);
+            ll.AddLast(2.0);
+            ll.AddLast(3.0);
+            ll.AddLast(4.0);
+
+        }
     }
 }
 //['account', 'action', 'activeStartTime', 'activeStopTime', 'adjustableTrailingUnit', 'adjustedOrderType', 'adjustedStopLimitPrice', 'adjustedStopPrice', 'adjustedTrailingAmount', 'algoId', 

@@ -16,9 +16,10 @@
             <TextBlock x:Name="txtOutput" TextWrapping="Wrap" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="True" Focusable="True" IsManipulationEnabled="True" 
                    HorizontalAlignment="Left" VerticalAlignment="Bottom" Grid.Column="1"/>
         </ScrollViewer>
-        <ComboBox x:Name="cboAccountHint" HorizontalAlignment="Left" Margin="201,-56,0,0" VerticalAlignment="Top" Width="208">
+        <ComboBox x:Name="cboAccountHint" HorizontalAlignment="Left" Margin="201,-56,0,0" VerticalAlignment="Top" Width="208" SelectedIndex="0">
             <System:String>Above 3333333</System:String>
             <System:String>Below 3333333</System:String>
         </ComboBox>
+        <Button x:Name="btnExperiments" Content="Experiments" HorizontalAlignment="Left" Height="26" Margin="449,-52,0,0" VerticalAlignment="Top" Width="133" Click="btnExperiments_Click"/>
     </Grid>
 </Window>
