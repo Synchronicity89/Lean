@@ -19,21 +19,6 @@ using QuantConnect.Indicators;
 
 namespace QuantConnect.Tests.Indicators
 {
-    using QuantConnect.Algorithm;
-    using QuantConnect.Algorithm.Framework.Alphas;
-    using QuantConnect.Algorithm.Framework.Execution;
-    using QuantConnect.Algorithm.Framework.Portfolio;
-    using QuantConnect.Algorithm.Framework.Risk;
-    using QuantConnect.Algorithm.Framework.Selection;
-    using QuantConnect.Data;
-    using QuantConnect.Data.Market;
-    using QuantConnect.Data.UniverseSelection;
-    using QuantConnect.Orders;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-
     [TestFixture]
     public class RelativeStrengthIndexTests : CommonIndicatorTests<IndicatorDataPoint>
     {
