@@ -155,6 +155,7 @@
     <Compile Include="S89\CostOfLivingAlphaModel.cs" />
     <Compile Include="S89\EquityHighLowAlphaModel.cs" />
     <Compile Include="S89\StandardDeviationExperiment.cs" />
+    <Compile Include="OnOrderEventExceptionRegression.cs" />
     <Compile Include="ScaledFillForwardDataRegressionAlgorithm.cs" />
     <Compile Include="DailyHistoryForDailyResolutionRegressionAlgorithm.cs" />
     <Compile Include="DailyHistoryForMinuteResolutionRegressionAlgorithm.cs" />
