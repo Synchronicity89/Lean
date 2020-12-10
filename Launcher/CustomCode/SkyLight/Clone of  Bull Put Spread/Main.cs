@@ -24,7 +24,7 @@ namespace QuantConnect
     using System.Linq;
     using System.Text;
 
-    public partial class BullPutSpread : QCAlgorithm 
+    public partial class BullPutSpreadAlgorithm : QCAlgorithm 
     {
         private Symbol _optionSymbol;
         string iSymbol = "MSFT";
