@@ -15,7 +15,7 @@ namespace Microsoft.Data.Analysis
         #pragma warning disable 1591
         public static DataFrameColumn operator +(DataFrameColumn left, DataFrameColumn right)
         {
-            return left.Add(right);
+            return left.Add(right, false, null);
         }
 
         public static DataFrameColumn operator +(DataFrameColumn column, byte value)

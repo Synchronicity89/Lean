@@ -42,7 +42,11 @@ namespace Microsoft.Data.Analysis
         /// <summary>
         /// <#=method.MethodComments#>
         /// </summary>
+<# if (method.MethodName == "Add") { #>
+        public virtual DataFrameColumn <#=method.MethodName#>(DataFrameColumn column, bool inPlace = false, Func<object, object> modifier = null)
+<# } else { #>
         public virtual DataFrameColumn <#=method.MethodName#>(DataFrameColumn column, bool inPlace = false)
+<# } #>
 <# } #>
 <# if (method.MethodType == MethodType.Comparison) {#>
         /// <summary>

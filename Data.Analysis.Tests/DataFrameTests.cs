@@ -533,6 +533,17 @@ namespace Microsoft.Data.Analysis.Tests
             {
                 Assert.Equal(newCol[i], typedStringColumn[i] + "suffix");
             }
+            var newCol2 = typedStringColumn.Add(newCol, false, (object so) =>
+            {
+                String s = (string)so;
+                string j = String.Join("", s.Where(c => Char.IsDigit(c) == false).ToArray());
+                j=j.Replace("ix", "");
+                return (object)j;
+            });
+           for (int i = 0; i < newCol2.Length; i++)
+            {
+                Assert.Equal(newCol2[i], typedStringColumn[i] + "suff");
+            }
             DataFrameColumn addString = typedStringColumn + "suffix";
             for (int i = 0; i < addString.Length; i++)
             {

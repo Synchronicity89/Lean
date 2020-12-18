@@ -58,7 +58,11 @@ namespace Microsoft.Data.Analysis
 <# } else if (method.MethodType == MethodType.Binary) { #>
         public static DataFrameColumn operator <#=method.Operator#>(DataFrameColumn left, DataFrameColumn right)
         {
+<# if(method.MethodName == "Add"){ #>
+            return left.<#=method.MethodName#>(right, false, null);
+<# } else { #>
             return left.<#=method.MethodName#>(right);
+<# } #>
         }
 
 <# } #>

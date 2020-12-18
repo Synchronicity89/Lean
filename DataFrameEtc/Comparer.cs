@@ -43,14 +43,21 @@ namespace DataFrameEtc
             filteredPositions = filteredPositions.OrderBy("Symbol");
             posAcct = filteredPositions["Sec Type"].ElementwiseEquals("OPT");
             filteredPositions = filteredPositions.Filter(posAcct);
+            //custom optional param only works with objects
+            var newOrdersCol = filteredOrders["Symbol"].Add(filteredOrders["Quantity"], false, (object s) => (object)((string)s).Replace("-", ""));
+            newOrdersCol.SetName("SymbolQ");
+            filteredOrders.Columns.Add(newOrdersCol);
+            var newPositionsCol = filteredPositions["Symbol"] + filteredPositions["Quantity"] ;
+            newPositionsCol.SetName("SymbolQ");
+            filteredPositions.Columns.Add(newPositionsCol);
 
             List<string> missing = new List<string>();
 
             foreach(var row in filteredPositions.Rows)
             {
-                PrimitiveDataFrameColumn<bool> symbMatch = filteredOrders["Symbol"].ElementwiseEquals(row[1].ToString());
+                PrimitiveDataFrameColumn<bool> symbMatch = filteredOrders["SymbolQ"].ElementwiseEquals(row[filteredPositions.Columns.IndexOf("SymbolQ")].ToString());
                 var symb = filteredOrders.Filter(symbMatch);
-                if (symb.Rows.Count == 0) missing.Add(row[1].ToString());
+                if (symb.Rows.Count == 0) missing.Add(row[filteredPositions.Columns.IndexOf("SymbolQ")].ToString());
             }
 
             var merged = filteredPositions.Merge<string>(filteredOrders, "Symbol", "Symbol");

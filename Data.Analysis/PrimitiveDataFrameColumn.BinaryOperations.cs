@@ -16,8 +16,10 @@ namespace Microsoft.Data.Analysis
         where T : unmanaged
     {
         /// <inheritdoc/>
-        public override DataFrameColumn Add(DataFrameColumn column, bool inPlace = false)
+        public override DataFrameColumn Add(DataFrameColumn column, bool inPlace = false, Func<object, object> modifier = null)
         {
+            if (modifier != null) throw new NotImplementedException("modifier not yet implemented except in StringDataFrameColumn");
+
             switch (column)
             {
                 case PrimitiveDataFrameColumn<bool> boolColumn:

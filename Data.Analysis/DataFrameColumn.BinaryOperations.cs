@@ -15,7 +15,7 @@ namespace Microsoft.Data.Analysis
         /// <summary>
         /// Performs element-wise addition
         /// </summary>
-        public virtual DataFrameColumn Add(DataFrameColumn column, bool inPlace = false)
+        public virtual DataFrameColumn Add(DataFrameColumn column, bool inPlace = false, Func<object, object> modifier = null)
         {
             throw new NotImplementedException();
         }

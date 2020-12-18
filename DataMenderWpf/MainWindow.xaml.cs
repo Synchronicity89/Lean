@@ -71,6 +71,7 @@ namespace DataMenderWpf
         {
             Int32 accountHint = int.Parse(cboAccountHint.SelectedValue.ToString().Substring(6));
             string direction = cboAccountHint.SelectedValue.ToString().Substring(0, 5);
+            //The DPythonS89 project stores the IBKR data here:
             var positionsDir = new DirectoryInfo("..\\..\\..\\..\\..\\");
             var csvs = positionsDir.GetFiles("all*.csv");
             Comparer comparer = new Comparer();

@@ -13,7 +13,7 @@ namespace Microsoft.Data.Analysis
     public partial class StringDataFrameColumn : DataFrameColumn
     {
         /// <inheritdoc/>
-        public override DataFrameColumn Add(DataFrameColumn column, bool inPlace = false)
+        public override DataFrameColumn Add(DataFrameColumn column, bool inPlace = false, Func<object, object> modifier = null)
         {
             if (Length != column.Length)
             {
@@ -22,7 +22,14 @@ namespace Microsoft.Data.Analysis
             StringDataFrameColumn ret = inPlace ? this : Clone();
             for (long i = 0; i < Length; i++)
             {
-                ret[i] += column[i].ToString();
+                if (modifier == null)
+                {
+                    ret[i] += column[i].ToString();
+                }
+                else
+                {
+                    ret[i] += modifier(column[i].ToString());
+                }
             }
             return ret;
         }
