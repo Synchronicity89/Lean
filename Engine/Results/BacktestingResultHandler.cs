@@ -361,13 +361,16 @@ namespace QuantConnect.Lean.Engine.Results
                 {
                     result = BacktestResultPacket.CreateEmpty(_job);
                 }
-                result.ProcessingTime = (DateTime.UtcNow - StartTime).TotalSeconds;
+
+                var utcNow = DateTime.UtcNow;
+                result.ProcessingTime = (utcNow - StartTime).TotalSeconds;
                 result.DateFinished = DateTime.Now;
                 result.Progress = 1;
 
                 //Place result into storage.
                 StoreResult(result);
 
+                result.Results.ServerStatistics = GetServerStatistics(utcNow);
                 //Second, send the truncated packet:
                 MessagingHandler.Send(result);
 
@@ -653,7 +656,7 @@ namespace QuantConnect.Lean.Engine.Results
         /// <param name="message">Additional optional status message.</param>
         public virtual void SendStatusUpdate(AlgorithmStatus status, string message = "")
         {
-            var statusPacket = new AlgorithmStatusPacket(_algorithmId, _projectId, status, message);
+            var statusPacket = new AlgorithmStatusPacket(_algorithmId, _projectId, status, message) { OptimizationId = _job.OptimizationId };
             MessagingHandler.Send(statusPacket);
         }
 

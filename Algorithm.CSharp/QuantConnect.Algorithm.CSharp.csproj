@@ -158,6 +158,7 @@
     <Compile Include="S89\EquityHighLowAlphaModel.cs" />
     <Compile Include="S89\StandardDeviationExperiment.cs" />
     <Compile Include="FutureOptionCallITMGreeksExpiryRegressionAlgorithm.cs" />
+    <Compile Include="FuturesAndFuturesOptionsExpiryTimeAndLiquidationRegressionAlgorithm.cs" />
     <Compile Include="OnOrderEventExceptionRegression.cs" />
     <Compile Include="FutureOptionCallITMExpiryRegressionAlgorithm.cs" />
     <Compile Include="FutureOptionCallOTMExpiryRegressionAlgorithm.cs" />

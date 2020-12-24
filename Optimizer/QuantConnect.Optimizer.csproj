@@ -59,11 +59,11 @@
     <Compile Include="Parameters\OptimizationStepParameterEnumerator.cs" />
     <Compile Include="Parameters\OptimizationStepParameter.cs" />
     <Compile Include="Parameters\OptimizationParameterJsonConverter.cs" />
+    <Compile Include="Parameters\StaticOptimizationParameter.cs" />
     <Compile Include="Strategies\StepBaseOptimizationStrategySettings.cs" />
     <Compile Include="Strategies\OptimizationStrategySettings.cs" />
     <Compile Include="Strategies\StepBaseOptimizationStrategy.cs" />
     <Compile Include="Objectives\Objective.cs" />
-    <Compile Include="OptimizationEstimate.cs" />
     <Compile Include="Objectives\Target.cs" />
     <Compile Include="Objectives\Constraint.cs" />
     <Compile Include="LeanOptimizer.cs" />

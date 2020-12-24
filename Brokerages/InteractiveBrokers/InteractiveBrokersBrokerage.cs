@@ -2244,51 +2244,59 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
         /// </summary>
         private Symbol MapSymbol(Contract contract)
         {
-            var securityType = ConvertSecurityType(contract);
-            var ibSymbol = securityType == SecurityType.Forex ? contract.Symbol + contract.Currency : contract.Symbol;
-
-            var market = InteractiveBrokersBrokerageModel.DefaultMarketMap[securityType];
-            var isFutureOption = contract.SecType == IB.SecurityType.FutureOption;
-
-            // Handle future options as a Future, up until we actually return the future.
-            if (isFutureOption || securityType == SecurityType.Future)
+            try
             {
-                var leanSymbol = _symbolMapper.GetLeanRootSymbol(ibSymbol);
-                var defaultMarket = market;
-                if (!_symbolPropertiesDatabase.TryGetMarket(leanSymbol, SecurityType.Future, out market))
+                var securityType = ConvertSecurityType(contract);
+                var ibSymbol = securityType == SecurityType.Forex ? contract.Symbol + contract.Currency : contract.Symbol;
+
+                var market = InteractiveBrokersBrokerageModel.DefaultMarketMap[securityType];
+                var isFutureOption = contract.SecType == IB.SecurityType.FutureOption;
+
+                // Handle future options as a Future, up until we actually return the future.
+                if (isFutureOption || securityType == SecurityType.Future)
                 {
-                    market = defaultMarket;
+                    var leanSymbol = _symbolMapper.GetLeanRootSymbol(ibSymbol);
+                    var defaultMarket = market;
+                    if (!_symbolPropertiesDatabase.TryGetMarket(leanSymbol, SecurityType.Future, out market))
+                    {
+                        market = defaultMarket;
+                    }
+
+                    var contractExpiryDate = DateTime.ParseExact(contract.LastTradeDateOrContractMonth, DateFormat.EightCharacter, CultureInfo.InvariantCulture);
+
+                    if (!isFutureOption)
+                    {
+                        return _symbolMapper.GetLeanSymbol(ibSymbol, SecurityType.Future, market, contractExpiryDate);
+                    }
+
+                    // Create a canonical future Symbol for lookup in the FuturesExpiryFunctions helper class.
+                    // We then get the delta between the futures option's expiry month vs. the future's expiry month.
+                    var canonicalFutureSymbol = _symbolMapper.GetLeanSymbol(ibSymbol, SecurityType.Future, market, SecurityIdentifier.DefaultDate);
+                    var futureExpiryFunction = FuturesExpiryFunctions.FuturesExpiryFunction(canonicalFutureSymbol);
+                    var futureContractExpiryDate = futureExpiryFunction(FuturesOptionsExpiryFunctions.GetFutureContractMonth(canonicalFutureSymbol, contractExpiryDate));
+                    var futureSymbol = Symbol.CreateFuture(canonicalFutureSymbol.ID.Symbol, canonicalFutureSymbol.ID.Market, futureContractExpiryDate);
+
+                    var right = contract.Right == IB.RightType.Call ? OptionRight.Call : OptionRight.Put;
+                    var strike = Convert.ToDecimal(contract.Strike);
+
+                    return Symbol.CreateOption(futureSymbol, market, OptionStyle.American, right, strike, contractExpiryDate);
                 }
 
-                var contractExpiryDate = DateTime.ParseExact(contract.LastTradeDateOrContractMonth, DateFormat.EightCharacter, CultureInfo.InvariantCulture);
-
-                if (!isFutureOption)
+                if (securityType == SecurityType.Option)
                 {
-                    return _symbolMapper.GetLeanSymbol(ibSymbol, SecurityType.Future, market, contractExpiryDate);
+                    var expiryDate = DateTime.ParseExact(contract.LastTradeDateOrContractMonth, DateFormat.EightCharacter, CultureInfo.InvariantCulture);
+                    var right = contract.Right == IB.RightType.Call ? OptionRight.Call : OptionRight.Put;
+                    var strike = Convert.ToDecimal(contract.Strike);
+
+                    return _symbolMapper.GetLeanSymbol(ibSymbol, securityType, market, expiryDate, strike, right);
                 }
 
-                // Create a canonical future Symbol for lookup in the FuturesExpiryFunctions helper class.
-                // We then get the delta between the futures option's expiry month vs. the future's expiry month.
-                var canonicalFutureSymbol = _symbolMapper.GetLeanSymbol(ibSymbol, SecurityType.Future, market, SecurityIdentifier.DefaultDate);
-                var futureExpiryFunction = FuturesExpiryFunctions.FuturesExpiryFunction(canonicalFutureSymbol);
-                var futureContractExpiryDate = futureExpiryFunction(FuturesOptionsExpiryFunctions.GetFutureContractMonth(canonicalFutureSymbol, contractExpiryDate));
-                var futureSymbol = Symbol.CreateFuture(canonicalFutureSymbol.ID.Symbol, canonicalFutureSymbol.ID.Market, futureContractExpiryDate);
-
-                var right = contract.Right == IB.RightType.Call ? OptionRight.Call : OptionRight.Put;
-                var strike = Convert.ToDecimal(contract.Strike);
-
-                return Symbol.CreateOption(futureSymbol, market, OptionStyle.American, right, strike, contractExpiryDate);
+                return _symbolMapper.GetLeanSymbol(ibSymbol, securityType, market);
             }
-            if (securityType == SecurityType.Option)
+            catch (Exception error)
             {
-                var expiryDate = DateTime.ParseExact(contract.LastTradeDateOrContractMonth, DateFormat.EightCharacter, CultureInfo.InvariantCulture);
-                var right = contract.Right == IB.RightType.Call ? OptionRight.Call : OptionRight.Put;
-                var strike = Convert.ToDecimal(contract.Strike);
-
-                return _symbolMapper.GetLeanSymbol(ibSymbol, securityType, market, expiryDate, strike, right);
+                throw new Exception($"InteractiveBrokersBrokerage.MapSymbol(): Failed to convert contract for {contract.Symbol}; Contract description: {GetContractDescription(contract)}", error);
             }
-
-            return _symbolMapper.GetLeanSymbol(ibSymbol, securityType, market);
         }
 
         private static decimal RoundPrice(decimal input, decimal minTick)
@@ -2374,7 +2382,7 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
                             // we ignore futures canonical symbol
                             if (symbol.ID.SecurityType == SecurityType.Future && symbol.IsCanonical())
                             {
-                                return false;
+                                continue;
                             }
 
                             var id = GetNextId();
@@ -2401,10 +2409,10 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
                             _subscribedTickers[id] = new SubscriptionEntry { Symbol = subscribeSymbol };
 
                             Log.Trace($"InteractiveBrokersBrokerage.Subscribe(): Subscribe Processed: {symbol.Value} ({GetContractDescription(contract)}) # {id}");
-                            return true;
                         }
                     }
                 }
+                return true;
             }
             catch (Exception err)
             {
@@ -3220,7 +3228,7 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
         // these are warning messages from IB
         private static readonly HashSet<int> WarningCodes = new HashSet<int>
         {
-            102, 104, 105, 106, 107, 109, 110, 111, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 129, 131, 132, 133, 134, 135, 136, 137, 140, 141, 146, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 201, 303,313,314,315,319,325,328,329,334,335,336,337,338,339,340,341,342,343,345,347,348,349,350,352,353,355,356,358,359,360,361,362,363,364,367,368,369,370,371,372,373,374,375,376,377,378,379,380,382,383,385,386,387,388,389,390,391,392,393,394,395,396,397,398,399,400,402,403,404,405,406,407,408,409,410,411,412,413,417,418,419,420,421,422,423,424,425,426,427,428,429,430,433,434,435,436,437,439,440,441,442,443,444,445,446,447,448,449,450,1100,10002,10003,10006,10007,10008,10009,10010,10011,10012,10014,10018,10019,10020,10052,10147,10148,10149,1101,1102,2100,2101,2102,2103,2105,2109,2110,2148
+            102, 104, 105, 106, 107, 109, 110, 111, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 129, 131, 132, 133, 134, 135, 136, 137, 140, 141, 146, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 201, 303,313,314,315,319,325,328,329,334,335,336,337,338,339,340,341,342,343,345,347,348,349,350,352,353,355,356,358,359,360,361,362,363,364,367,368,369,370,371,372,373,374,375,376,377,378,379,380,382,383,385,386,387,388,389,390,391,392,393,394,395,396,397,398,399,400,402,403,404,405,406,407,408,409,410,411,412,413,417,418,419,420,421,422,423,424,425,426,427,428,429,430,433,434,435,436,437,439,440,441,442,443,444,445,446,447,448,449,450,10002,10003,10006,10007,10008,10009,10010,10011,10012,10014,10018,10019,10020,10052,10147,10148,10149,2100,2101,2102,2109,2148
         };
 
         // these require us to issue invalidated order events

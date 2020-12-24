@@ -16,7 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
+using System.Threading.Tasks;
 using QuantConnect.Optimizer;
 using QuantConnect.Optimizer.Parameters;
 
@@ -38,12 +38,11 @@ namespace QuantConnect.Tests.Optimizer
             var id = Guid.NewGuid().ToString();
             _backtests.Add(id);
 
-            Timer timer = null;
-            timer = new Timer(y =>
+            Task.Delay(100).ContinueWith(task =>
             {
                 try
                 {
-                    var sum = parameterSet.Value.Sum(s => s.Value.ToDecimal());
+                    var sum = parameterSet.Value.Where(pair => pair.Key != "skipFromResultSum").Sum(s => s.Value.ToDecimal());
                     if (sum != 29)
                     {
                         NewResult(BacktestResult.Create(sum, sum / 100).ToJson(), id);
@@ -53,14 +52,11 @@ namespace QuantConnect.Tests.Optimizer
                         // fail some backtests by passing empty json
                         NewResult(string.Empty, id);
                     }
-
-                    timer.Dispose();
                 }
                 catch
                 {
                 }
             });
-            timer.Change(100, Timeout.Infinite);
 
             return id;
         }
