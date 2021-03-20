@@ -32,6 +32,7 @@ namespace QuantConnect.Orders
         private decimal _fillQuantity;
         private decimal _quantity;
         private decimal? _limitPrice;
+        private decimal? _triggerPrice;
         private decimal? _stopPrice;
 
         /// <summary>
@@ -121,6 +122,22 @@ namespace QuantConnect.Orders
                 if (value.HasValue)
                 {
                     _stopPrice = value.Value.Normalize();
+                }
+            }
+        }
+
+        /// <summary>
+        /// The current trigger price
+        /// </summary>
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public decimal? TriggerPrice
+        {
+            get { return _triggerPrice; }
+            set
+            {
+                if (value.HasValue)
+                {
+                    _triggerPrice = value.Value.Normalize();
                 }
             }
         }
@@ -241,6 +258,10 @@ namespace QuantConnect.Orders
             {
                 message += Invariant($" StopPrice: {StopPrice.Value.SmartRounding()}");
             }
+            if (TriggerPrice.HasValue)
+            {
+                message += Invariant($" TriggerPrice: {TriggerPrice.Value.SmartRounding()}");
+            }
 
             // attach the order fee so it ends up in logs properly.
             if (OrderFee.Value.Amount != 0m) message += Invariant($" OrderFee: {OrderFee}");
@@ -251,7 +272,7 @@ namespace QuantConnect.Orders
                 message += Invariant($" Message: {Message}");
             }
 
-            if (Symbol.SecurityType == SecurityType.Option || Symbol.SecurityType == SecurityType.FutureOption)
+            if (Symbol.SecurityType.IsOption())
             {
                 message += Invariant($" IsAssignment: {IsAssignment}");
             }
@@ -278,6 +299,10 @@ namespace QuantConnect.Orders
             {
                 message += Invariant($" SP:{StopPrice.Value.SmartRounding()}");
             }
+            if (TriggerPrice.HasValue)
+            {
+                message += Invariant($" TP:{TriggerPrice.Value.SmartRounding()}");
+            }
 
             // attach the order fee so it ends up in logs properly.
             if (OrderFee.Value.Amount != 0m) message += Invariant($" OF:{OrderFee}");
@@ -288,7 +313,7 @@ namespace QuantConnect.Orders
                 message += Invariant($" M:{Message}");
             }
 
-            if (Symbol.SecurityType == SecurityType.Option || Symbol.SecurityType == SecurityType.FutureOption)
+            if (Symbol.SecurityType.IsOption())
             {
                 message += Invariant($" IA:{IsAssignment}");
             }
