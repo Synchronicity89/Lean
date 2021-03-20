@@ -1,57 +1,38 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\Microsoft.CodeAnalysis.FxCopAnalyzers.2.9.3\build\Microsoft.CodeAnalysis.FxCopAnalyzers.props" Condition="Exists('..\packages\Microsoft.CodeAnalysis.FxCopAnalyzers.2.9.3\build\Microsoft.CodeAnalysis.FxCopAnalyzers.props')" />
-  <Import Project="..\packages\Microsoft.NetFramework.Analyzers.2.9.3\build\Microsoft.NetFramework.Analyzers.props" Condition="Exists('..\packages\Microsoft.NetFramework.Analyzers.2.9.3\build\Microsoft.NetFramework.Analyzers.props')" />
-  <Import Project="..\packages\Microsoft.NetCore.Analyzers.2.9.3\build\Microsoft.NetCore.Analyzers.props" Condition="Exists('..\packages\Microsoft.NetCore.Analyzers.2.9.3\build\Microsoft.NetCore.Analyzers.props')" />
-  <Import Project="..\packages\Microsoft.CodeQuality.Analyzers.2.9.3\build\Microsoft.CodeQuality.Analyzers.props" Condition="Exists('..\packages\Microsoft.CodeQuality.Analyzers.2.9.3\build\Microsoft.CodeQuality.Analyzers.props')" />
-  <Import Project="..\packages\Microsoft.CodeAnalysis.VersionCheckAnalyzer.2.9.3\build\Microsoft.CodeAnalysis.VersionCheckAnalyzer.props" Condition="Exists('..\packages\Microsoft.CodeAnalysis.VersionCheckAnalyzer.2.9.3\build\Microsoft.CodeAnalysis.VersionCheckAnalyzer.props')" />
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{09E7B916-E58B-4021-BD8B-C10B4446E226}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>QuantConnect.Lean.Launcher</RootNamespace>
     <AssemblyName>QuantConnect.Lean.Launcher</AssemblyName>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
+    <TargetFramework>net462</TargetFramework>
     <LangVersion>6</LangVersion>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
-    <TargetFrameworkProfile />
     <CodeAnalysisRuleSet>..\QuantConnect.ruleset</CodeAnalysisRuleSet>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <CodeAnalysisRuleSet>..\QuantConnect.ruleset</CodeAnalysisRuleSet>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>$(SelectedOptimization)</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <PlatformTarget>x64</PlatformTarget>
-    <Prefer32Bit>false</Prefer32Bit>
-    <LangVersion>6</LangVersion>
-    <CodeAnalysisRuleSet>..\QuantConnect.ruleset</CodeAnalysisRuleSet>
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
-    <LangVersion>6</LangVersion>
-    <CodeAnalysisRuleSet>..\QuantConnect.ruleset</CodeAnalysisRuleSet>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>QuantConnect.Lean.Launcher.Program</StartupObject>
   </PropertyGroup>
   <Target Name="Print" BeforeTargets="Build">
     <Message Text="SelectedOptimization $(SelectedOptimization)" Importance="high" />
   </Target>
-  <PropertyGroup>
-    <StartupObject>QuantConnect.Lean.Launcher.Program</StartupObject>
-  </PropertyGroup>
   <ItemGroup>
     <Reference Include="DynamicInterop, Version=0.7.4.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\DynamicInterop.0.7.4\lib\net40\DynamicInterop.dll</HintPath>
@@ -140,15 +121,6 @@
     <Reference Include="IKVM.Runtime.JNI, Version=8.1.5717.0, Culture=neutral, PublicKeyToken=13235d27fcbfff58, processorArchitecture=MSIL">
       <HintPath>..\packages\IKVM.8.1.5717.0\lib\IKVM.Runtime.JNI.dll</HintPath>
     </Reference>
-    <Reference Include="NodaTime, Version=1.3.0.0, Culture=neutral, PublicKeyToken=4226afe0d9b296d1, processorArchitecture=MSIL">
-      <HintPath>..\packages\NodaTime.1.3.0\lib\net35-Client\NodaTime.dll</HintPath>
-    </Reference>
-    <Reference Include="Python.Runtime, Version=1.0.5.30, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\QuantConnect.pythonnet.1.0.5.30\lib\osx\Python.Runtime.dll</HintPath>
-    </Reference>
-    <Reference Include="QuantConnect.Lean.Engine">
-      <HintPath>..\Engine\bin\Debug\QuantConnect.Lean.Engine.dll</HintPath>
-    </Reference>
     <Reference Include="RDotNet, Version=1.6.5.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\R.NET.Community.1.6.5\lib\net40\RDotNet.dll</HintPath>
     </Reference>
@@ -158,52 +130,15 @@
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Net.Http, Version=4.1.1.3, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Net.Http.4.3.4\lib\net46\System.Net.Http.dll</HintPath>
-    </Reference>
     <Reference Include="System.Numerics" />
-    <Reference Include="System.Security.Cryptography.Algorithms, Version=4.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Security.Cryptography.Algorithms.4.3.0\lib\net461\System.Security.Cryptography.Algorithms.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Security.Cryptography.Encoding, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Security.Cryptography.Encoding.4.3.0\lib\net46\System.Security.Cryptography.Encoding.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Security.Cryptography.Primitives, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Security.Cryptography.Primitives.4.3.0\lib\net46\System.Security.Cryptography.Primitives.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Security.Cryptography.X509Certificates, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Security.Cryptography.X509Certificates.4.3.0\lib\net461\System.Security.Cryptography.X509Certificates.dll</HintPath>
-    </Reference>
     <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\Common\Properties\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
-    <Compile Include="CustomCode\SeparatedConcernEMAWeighted.cs" />
-    <Compile Include="CustomCode\CloLimitOrderStopLossTakeProfit.cs" />
-    <Compile Include="CustomCode\SkyLight\Basic Template Algorithm\BasicTemplateAlgorithm.cs" />
-    <Compile Include="CustomCode\SkyLight\Basic Template Algorithm\GettingStarted.cs" />
-    <Compile Include="CustomCode\SkyLight\Boot Camp\C#\Algorithmic Trading 101\200-50 EMA Momentum Universe\Preparing Indicators with History\main.cs" />
-    <Compile Include="CustomCode\SkyLight\Boot Camp\C#\Algorithmic Trading 101\Buy and Hold with a Trailing Stop\Visualizing the Stop Levels\main.cs" />
-    <Compile Include="CustomCode\SkyLight\Boot Camp\C#\Algorithmic Trading 101\Fading The Gap\Reducing a Parameter\main.cs" />
-    <Compile Include="CustomCode\SkyLight\Boot Camp\C#\Algorithmic Trading 101\Liquid Universe Selection\Customizing Universe Settings\main.cs" />
-    <Compile Include="CustomCode\SkyLight\Boot Camp\C#\Algorithmic Trading 101\Liquid Value Stocks\Final Solution\main.cs" />
-    <Compile Include="CustomCode\SkyLight\Boot Camp\C#\Algorithmic Trading 101\Momentum-Based Tactical Allocation\Time Our Market Moves\main.cs" />
-    <Compile Include="CustomCode\SkyLight\Boot Camp\C#\Algorithmic Trading 101\Opening Range Breakout\Scheduling Events\main.cs" />
-    <Compile Include="CustomCode\SkyLight\Boot Camp\C#\Algorithmic Trading 101\Pairs Trading with SMA\Warming Our Pair Spread\main.cs" />
-    <Compile Include="CustomCode\SkyLight\Boot Camp\C#\Algorithmic Trading 101\The Algorithm Framework\Execution Model\main.cs" />
-    <Compile Include="CustomCode\SkyLight\ChoseModulesAndGenerated\CboeVixAlphaModel.cs" />
-    <Compile Include="CustomCode\SkyLight\ChoseModulesAndGenerated\Main.cs" />
-    <Compile Include="CustomCode\SkyLight\ChoseModulesAndGenerated\OptionsUniverseSelectionModel.cs" />
-    <Compile Include="CustomCode\SkyLight\Clone of  Bull Put Spread\Main.cs" />
-    <Compile Include="CustomCode\SkyLight\Clone of\Main.cs" />
-    <Compile Include="CustomCode\SkyLight\Clone of\RelativeStrengthIndex.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -211,10 +146,6 @@
     <ProjectReference Include="..\Algorithm.CSharp\QuantConnect.Algorithm.CSharp.csproj">
       <Project>{39a81c16-a1e8-425e-a8f2-1433adb80228}</Project>
       <Name>QuantConnect.Algorithm.CSharp</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Algorithm.Framework\QuantConnect.Algorithm.Framework.csproj">
-      <Project>{75981418-7246-4b91-b136-482728e02901}</Project>
-      <Name>QuantConnect.Algorithm.Framework</Name>
     </ProjectReference>
     <ProjectReference Include="..\AlgorithmFactory\QuantConnect.AlgorithmFactory.csproj">
       <Project>{e99d056a-b6fb-48d2-9f7c-683c54cebbf9}</Project>
@@ -239,6 +170,10 @@
     <ProjectReference Include="..\Configuration\QuantConnect.Configuration.csproj">
       <Project>{0aeb4ea3-28c8-476e-89fd-926f06590b4c}</Project>
       <Name>QuantConnect.Configuration</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Engine\QuantConnect.Lean.Engine.csproj">
+      <Project>{12156F46-D07E-4E3D-AD2B-7409E82AB62F}</Project>
+      <Name>QuantConnect.Lean.Engine</Name>
     </ProjectReference>
     <ProjectReference Include="..\Indicators\QuantConnect.Indicators.csproj">
       <Project>{73fb2522-c3ed-4e47-8e3d-afad48a6b888}</Project>
@@ -270,64 +205,12 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config">
-      <SubType>Designer</SubType>
-    </None>
     <None Include="config.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="CustomCode\SkyLight\Basic Template Algorithm\.qcproject" />
-    <None Include="CustomCode\SkyLight\Boot Camp\C#\Algorithmic Trading 101\200-50 EMA Momentum Universe\Preparing Indicators with History\.qcproject" />
-    <None Include="CustomCode\SkyLight\Boot Camp\C#\Algorithmic Trading 101\Buy and Hold with a Trailing Stop\Visualizing the Stop Levels\.qcproject" />
-    <None Include="CustomCode\SkyLight\Boot Camp\C#\Algorithmic Trading 101\Fading The Gap\Reducing a Parameter\.qcproject" />
-    <None Include="CustomCode\SkyLight\Boot Camp\C#\Algorithmic Trading 101\Liquid Universe Selection\Customizing Universe Settings\.qcproject" />
-    <None Include="CustomCode\SkyLight\Boot Camp\C#\Algorithmic Trading 101\Liquid Value Stocks\Final Solution\.qcproject" />
-    <None Include="CustomCode\SkyLight\Boot Camp\C#\Algorithmic Trading 101\Momentum-Based Tactical Allocation\Time Our Market Moves\.qcproject" />
-    <None Include="CustomCode\SkyLight\Boot Camp\C#\Algorithmic Trading 101\Opening Range Breakout\Scheduling Events\.qcproject" />
-    <None Include="CustomCode\SkyLight\Boot Camp\C#\Algorithmic Trading 101\Pairs Trading with SMA\Warming Our Pair Spread\.qcproject" />
-    <None Include="CustomCode\SkyLight\Boot Camp\C#\Algorithmic Trading 101\The Algorithm Framework\Execution Model\.qcproject" />
-    <None Include="CustomCode\SkyLight\Boot Camp\C#\Algorithmic Trading 101\The Algorithm Framework\Execution Model\TestPy.ipynb" />
-    <None Include="CustomCode\SkyLight\Calibrated quantum circuit\.qcproject" />
-    <None Include="CustomCode\SkyLight\Calibrated quantum circuit\research.ipynb" />
-    <None Include="CustomCode\SkyLight\Calibrated uncoupled shield\.qcproject" />
-    <None Include="CustomCode\SkyLight\Calibrated uncoupled shield\research.ipynb" />
-    <None Include="CustomCode\SkyLight\ChoseModulesAndGenerated\.qcproject" />
-    <None Include="CustomCode\SkyLight\ChoseModulesAndGenerated\Research.ipynb" />
-    <None Include="CustomCode\SkyLight\CloClo 06_FX Momentum\.qcproject" />
-    <None Include="CustomCode\SkyLight\CloClo 06_FX Momentum\research.ipynb" />
-    <None Include="CustomCode\SkyLight\Clone of   Basic Template Algorithm\.qcproject" />
-    <None Include="CustomCode\SkyLight\Clone of   Basic Template Algorithm\research.ipynb" />
-    <None Include="CustomCode\SkyLight\Clone of  06_FX Momentum\.qcproject" />
-    <None Include="CustomCode\SkyLight\Clone of  06_FX Momentum\research.ipynb" />
-    <None Include="CustomCode\SkyLight\Clone of  102 option expiration week effect\.qcproject" />
-    <None Include="CustomCode\SkyLight\Clone of  102 option expiration week effect\research.ipynb" />
-    <None Include="CustomCode\SkyLight\Clone of  12 Month Cycle in Stock Returns 1\.qcproject" />
-    <None Include="CustomCode\SkyLight\Clone of  12 Month Cycle in Stock Returns 1\research.ipynb" />
-    <None Include="CustomCode\SkyLight\Clone of  12 Month Cycle in Stock Returns\.qcproject" />
-    <None Include="CustomCode\SkyLight\Clone of  12 Month Cycle in Stock Returns\research.ipynb" />
-    <None Include="CustomCode\SkyLight\Clone of  6411 MACD\.qcproject" />
-    <None Include="CustomCode\SkyLight\Clone of  6411 MACD\research.ipynb" />
-    <None Include="CustomCode\SkyLight\Clone of  Bull Put Spread\.qcproject" />
-    <None Include="CustomCode\SkyLight\Clone of\.qcproject" />
-    <None Include="CustomCode\SkyLight\Clone of\Research.ipynb" />
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="CustomCode\Bak\" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="CustomCode\SkyLight\Calibrated quantum circuit\main.py" />
-    <Content Include="CustomCode\SkyLight\Calibrated quantum circuit\TradingEconomicsAlphaModel.py" />
-    <Content Include="CustomCode\SkyLight\Calibrated uncoupled shield\main.py" />
-    <Content Include="CustomCode\SkyLight\CloClo 06_FX Momentum\main.py" />
-    <Content Include="CustomCode\SkyLight\Clone of   Basic Template Algorithm\main.py" />
-    <Content Include="CustomCode\SkyLight\Clone of  06_FX Momentum\main.py" />
-    <Content Include="CustomCode\SkyLight\Clone of  102 option expiration week effect\main.py" />
-    <Content Include="CustomCode\SkyLight\Clone of  12 Month Cycle in Stock Returns 1\main.py" />
-    <Content Include="CustomCode\SkyLight\Clone of  12 Month Cycle in Stock Returns\main.py" />
-    <Content Include="CustomCode\SkyLight\Clone of  6411 MACD\main.py" />
   </ItemGroup>
   <ItemGroup>
     <Analyzer Include="..\packages\Microsoft.CodeAnalysis.VersionCheckAnalyzer.2.9.3\analyzers\dotnet\Microsoft.CodeAnalysis.VersionCheckAnalyzer.dll" />
@@ -351,9 +234,7 @@
     <Error Condition="!Exists('..\packages\Microsoft.NetCore.Analyzers.2.9.3\build\Microsoft.NetCore.Analyzers.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.NetCore.Analyzers.2.9.3\build\Microsoft.NetCore.Analyzers.props'))" />
     <Error Condition="!Exists('..\packages\Microsoft.NetFramework.Analyzers.2.9.3\build\Microsoft.NetFramework.Analyzers.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.NetFramework.Analyzers.2.9.3\build\Microsoft.NetFramework.Analyzers.props'))" />
     <Error Condition="!Exists('..\packages\Microsoft.CodeAnalysis.FxCopAnalyzers.2.9.3\build\Microsoft.CodeAnalysis.FxCopAnalyzers.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.CodeAnalysis.FxCopAnalyzers.2.9.3\build\Microsoft.CodeAnalysis.FxCopAnalyzers.props'))" />
-    <Error Condition="!Exists('..\packages\QuantConnect.pythonnet.1.0.5.30\build\QuantConnect.pythonnet.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\QuantConnect.pythonnet.1.0.5.30\build\QuantConnect.pythonnet.targets'))" />
   </Target>
-  <Import Project="..\packages\QuantConnect.pythonnet.1.0.5.30\build\QuantConnect.pythonnet.targets" Condition="Exists('..\packages\QuantConnect.pythonnet.1.0.5.30\build\QuantConnect.pythonnet.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
