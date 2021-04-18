@@ -92,6 +92,7 @@ def read_orders(): #read all accounts orders and return DataFrame with informati
             thread.start()
 #order.account, orderId, contract.symbol, order.totalQuantity, contract.secType, order.action, order.orderType, order.lmtPrice, order.tif
             self.all_orders = pd.DataFrame([], columns = ['Account','OrderId', 'Symbol', 'Quantity', 'Sec Type', 'action', 'orderType', 'lmtPrice', 'tif'])#])#
+            #self.all_orders = pd.DataFrame([], columns = ['OrderId', 'Symbol', 'Quantity', 'Sec Type', 'action', 'orderType', 'lmtPrice', 'tif'])#])#
 
         def error(self, reqId:TickerId, errorCode:int, errorString:str):
             if reqId > -1:
@@ -99,8 +100,16 @@ def read_orders(): #read all accounts orders and return DataFrame with informati
 
 #self, orderId: OrderId, contract: Contract, order: Order, orderState: OrderState
         def openOrder(self, orderId, contract, order, orderState):
-            index = str(order.permId)+str(contract.symbol)+str(order.totalQuantity)+order.tif+str(order.lmtPrice)
-            self.all_orders.loc[index]= order.account, orderId, contract.symbol, order.totalQuantity, contract.secType, order.action, order.orderType, order.lmtPrice, order.tif#
+            index = str(order.permId)+str(contract.symbol)+str(order.totalQuantity)+order.tif+str(order.lmtPrice)+str(order.account)
+            account1 = order.account
+            symbol1 = contract.symbol
+            totalQuantity1 = order.totalQuantity
+            secType1 = contract.secType
+            action1 = order.action
+            orderType1 = order.orderType
+            lmtPrice1 = order.lmtPrice
+            tif1 = order.tif
+            self.all_orders.loc[index]= [account1, orderId, symbol1, totalQuantity1, secType1, action1, orderType1, lmtPrice1, tif1]
             if self.printed == False:
                 #print(dir(order))
                 print("orderId, status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld, mktCapPrice")
@@ -120,7 +129,8 @@ def read_orders(): #read all accounts orders and return DataFrame with informati
     print("Waiting for IB's API response for accounts positions requests...\n")
     time.sleep(6.0)
     current_orders = ib_api.all_orders
-    current_orders.set_index('Account',inplace=True,drop=True) #set all_positions DataFrame index to "Account"
+    #fixed a crash where the Account column had vanished by commenting out:
+    #current_orders.set_index('Account',inplace=True,drop=True) #set all_positions DataFrame index to "Account"
     ib_api.disconnect()
 
     return(current_orders)

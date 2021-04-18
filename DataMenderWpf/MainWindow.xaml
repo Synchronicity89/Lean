@@ -11,16 +11,24 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="908*"/>
         </Grid.ColumnDefinitions>
-        <Button x:Name="btnOrdersVsPositions" Content="Orders Vs Positions" HorizontalAlignment="Left" Margin="9,-54,0,0" VerticalAlignment="Top" Click="btnOrdersVsPositions_Click" Height="28" Width="157" Grid.ColumnSpan="2"/>
+        <Button x:Name="btnOrdersVsPositions" Content="Orders Vs Positions" HorizontalAlignment="Left" Margin="15,-57,0,0" VerticalAlignment="Top" Click="btnOrdersVsPositions_Click" Height="28" Width="226"/>
         <ScrollViewer>
             <TextBlock x:Name="txtOutput" TextWrapping="Wrap" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="True" Focusable="True" IsManipulationEnabled="True" 
                    HorizontalAlignment="Left" VerticalAlignment="Bottom" Grid.Column="1"/>
         </ScrollViewer>
-        <ComboBox x:Name="cboAccountHint" HorizontalAlignment="Left" Margin="201,-56,0,0" VerticalAlignment="Top" Width="208" SelectedIndex="0">
+        <ComboBox x:Name="cboAccountHint" HorizontalAlignment="Left" Margin="265,-54,0,0" VerticalAlignment="Top" Width="396" SelectedIndex="0" Height="25" RenderTransformOrigin="0.5,0.5">
+            <ComboBox.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform/>
+                    <SkewTransform AngleY="-0.272"/>
+                    <RotateTransform/>
+                    <TranslateTransform Y="-0.718"/>
+                </TransformGroup>
+            </ComboBox.RenderTransform>
             <System:String>Above 5000000</System:String>
             <System:String>Above 3333333 but below 5000000</System:String>
             <System:String>Below 3333333</System:String>
         </ComboBox>
-        <Button x:Name="btnExperiments" Content="Experiments" HorizontalAlignment="Left" Height="26" Margin="449,-52,0,0" VerticalAlignment="Top" Width="133" Click="btnExperiments_Click"/>
+        <Button x:Name="btnExperiments" Content="Experiments" HorizontalAlignment="Left" Height="26" Margin="675,-55,0,0" VerticalAlignment="Top" Width="133" Click="btnExperiments_Click"/>
     </Grid>
 </Window>

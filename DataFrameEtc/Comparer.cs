@@ -44,17 +44,19 @@ namespace DataFrameEtc
                 orderAcct2 = ordersdf["AccountNo"].ElementwiseLessThan<Int32>(accountHint2);
                 posAcct = positionsdf["AccountNo"].ElementwiseGreaterThan<Int32>(accountHint);
                 posAcct2 = positionsdf["AccountNo"].ElementwiseLessThan<Int32>(accountHint2);
+                orderAcct.And(orderAcct2, true);
+                posAcct.And(posAcct2, true);
             }
             //PrimitiveDataFrameColumn<bool> orderQuan = ordersdf["Quantity"].ElementwiseNotEquals(0.0f);
             //PrimitiveDataFrameColumn<bool> posQuan = positionsdf["Quantity"].ElementwiseNotEquals(0.0f);
             DataFrame filteredOrders = ordersdf.Filter(orderAcct);
             DataFrame filteredPositions = positionsdf.Filter(posAcct);
-            if(direction == "between")
-            {
-                //TODO: this won't quite work yet, so debug later
-                filteredOrders = ordersdf.Filter(orderAcct2);
-                filteredPositions = positionsdf.Filter(posAcct2);
-            }
+            //if(direction == "between")
+            //{
+            //    //TODO: this won't quite work yet, so debug later
+            //    filteredOrders = ordersdf.Filter(orderAcct2);
+            //    filteredPositions = positionsdf.Filter(posAcct2);
+            //}
             //filteredOrders = filteredOrders.Filter(orderQuan);
             //filteredPositions = filteredPositions.Filter(posQuan);
             PrimitiveDataFrameColumn<bool> ordersAction = filteredOrders["action"].ElementwiseEquals("SELL");
