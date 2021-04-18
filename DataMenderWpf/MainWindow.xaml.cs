@@ -69,13 +69,23 @@ namespace DataMenderWpf
 
         private void btnOrdersVsPositions_Click(object sender, RoutedEventArgs e)
         {
-            Int32 accountHint = int.Parse(cboAccountHint.SelectedValue.ToString().Substring(6));
-            string direction = cboAccountHint.SelectedValue.ToString().Substring(0, 5);
+            Int32 accountHint = int.Parse(cboAccountHint.SelectedValue.ToString().Substring(6, 7));
+            Int32 accountHint2 = -1;
+            string direction = null;
+            if (cboAccountHint.SelectedValue.ToString().Length > 16)
+            {
+                accountHint2 = int.Parse(cboAccountHint.SelectedValue.ToString().Substring("Above 3333333 but below ".Length, 7));
+                direction = "between";
+            }
+            else 
+            {
+                direction = cboAccountHint.SelectedValue.ToString().Substring(0, 5);
+            }
             //The DPythonS89 project stores the IBKR data here:
             var positionsDir = new DirectoryInfo("..\\..\\..\\..\\..\\");
             var csvs = positionsDir.GetFiles("all*.csv");
             Comparer comparer = new Comparer();
-            var t = comparer.Results(csvs, accountHint, direction);
+            var t = comparer.Results(csvs, accountHint, direction, accountHint2);
             //var r = ordersdf.Filter(new PrimitiveDataFrameColumn<bool>("Account").Contains(52));
             t.ForEach(te => txtOutput.Text += te + Environment.NewLine);
         }

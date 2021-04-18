@@ -8,7 +8,7 @@ namespace DataFrameEtc
 {
     public class Comparer
     {
-        public List<string> Results(FileInfo[] csvs, int accountHint, string direction)
+        public List<string> Results(FileInfo[] csvs, int accountHint, string direction, int accountHint2)
         {
             DataFrame ordersdf = DataFrame.LoadCsv(csvs.First(csv => csv.Name.EndsWith("orders.csv")).FullName);
             DataFrame positionsdf = DataFrame.LoadCsv(csvs.First(csv => csv.Name.EndsWith("positions.csv")).FullName);
@@ -27,14 +27,34 @@ namespace DataFrameEtc
             var posAccountNo = new Int32DataFrameColumn("AccountNo", listPosAccounts);
             ordersdf.Columns.Add(orderAccountNo);
             positionsdf.Columns.Add(posAccountNo);
-            PrimitiveDataFrameColumn<bool> orderAcct = direction == "Above" ? ordersdf["AccountNo"].ElementwiseGreaterThan<Int32>(accountHint) :
-                ordersdf["AccountNo"].ElementwiseLessThan<Int32>(accountHint);
-            PrimitiveDataFrameColumn<bool> posAcct = direction == "Above" ? positionsdf["AccountNo"].ElementwiseGreaterThan<Int32>(accountHint) :
-                positionsdf["AccountNo"].ElementwiseLessThan<Int32>(accountHint);
+            PrimitiveDataFrameColumn<bool> orderAcct = null;
+            PrimitiveDataFrameColumn<bool> posAcct = null;
+            PrimitiveDataFrameColumn<bool> orderAcct2 = null;
+            PrimitiveDataFrameColumn<bool> posAcct2 = null;
+            if (direction != "between")
+            { 
+                orderAcct = direction == "Above" ? ordersdf["AccountNo"].ElementwiseGreaterThan<Int32>(accountHint) :
+                    ordersdf["AccountNo"].ElementwiseLessThan<Int32>(accountHint);
+                posAcct = direction == "Above" ? positionsdf["AccountNo"].ElementwiseGreaterThan<Int32>(accountHint) :
+                    positionsdf["AccountNo"].ElementwiseLessThan<Int32>(accountHint);
+            }
+            else
+            {
+                orderAcct = ordersdf["AccountNo"].ElementwiseGreaterThan<Int32>(accountHint);
+                orderAcct2 = ordersdf["AccountNo"].ElementwiseLessThan<Int32>(accountHint2);
+                posAcct = positionsdf["AccountNo"].ElementwiseGreaterThan<Int32>(accountHint);
+                posAcct2 = positionsdf["AccountNo"].ElementwiseLessThan<Int32>(accountHint2);
+            }
             //PrimitiveDataFrameColumn<bool> orderQuan = ordersdf["Quantity"].ElementwiseNotEquals(0.0f);
             //PrimitiveDataFrameColumn<bool> posQuan = positionsdf["Quantity"].ElementwiseNotEquals(0.0f);
             DataFrame filteredOrders = ordersdf.Filter(orderAcct);
             DataFrame filteredPositions = positionsdf.Filter(posAcct);
+            if(direction == "between")
+            {
+                //TODO: this won't quite work yet, so debug later
+                filteredOrders = ordersdf.Filter(orderAcct2);
+                filteredPositions = positionsdf.Filter(posAcct2);
+            }
             //filteredOrders = filteredOrders.Filter(orderQuan);
             //filteredPositions = filteredPositions.Filter(posQuan);
             PrimitiveDataFrameColumn<bool> ordersAction = filteredOrders["action"].ElementwiseEquals("SELL");
