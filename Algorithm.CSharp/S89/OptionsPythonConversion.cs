@@ -262,7 +262,7 @@ namespace NQuantConnect.Algorithm.CSharpamespace
 
         private TimeSpan timedelta(int v)
         {
-            throw new NotImplementedException();
+            return TimeSpan.FromDays(v);
         }
 
         // ----------------------------------------------------------------------
