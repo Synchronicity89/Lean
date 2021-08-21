@@ -148,7 +148,8 @@ namespace NQuantConnect.Algorithm.CSharpamespace
                 this.Log("get contract");
                 this.get_contracts(slice);
                 //if (!this.call || !this.put)
-                if (this.call  == null || this.put == null)
+                //if (not(this.call != None) or not(this.put != None))
+                if ((!(this.call  != null)) || (!(this.put != null)))
                 {
                     return;
                 }
@@ -156,13 +157,16 @@ namespace NQuantConnect.Algorithm.CSharpamespace
                 var unit_price = this.Securities[this.equity_symbol].Price * 100.0m;
                 var qnty = Convert.ToInt32(this.Portfolio.TotalPortfolioValue / unit_price);
                 // call_exists, put_exists = self.call is not None, self.put is not None
+
                 if (this.call != null)
                 {
-                    this.Sell(this.call.Symbol, qnty);
+                    // this.Sell(this.call.Symbol, qnty);
+                    this.Buy(this.call.Symbol, qnty);
                 }
                 if (this.put != null)
                 {
-                    this.MarketOrder(this.put.Symbol, -qnty);
+                    //this.MarketOrder(this.put.Symbol, -qnty);
+                    this.MarketOrder(this.put.Symbol, qnty);
                 }
             }
             // 3. delta-hedged any existing option
