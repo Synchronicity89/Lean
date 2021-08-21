@@ -1,4 +1,4 @@
-﻿/*
+/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -25,8 +25,7 @@ using NUnit.Framework;
 using QuantConnect.Algorithm;
 using QuantConnect.Data;
 using QuantConnect.Data.Auxiliary;
-using QuantConnect.Data.Custom.Benzinga;
-using QuantConnect.Data.Custom.Tiingo;
+using QuantConnect.Data.Custom.IconicTypes;
 using QuantConnect.Data.Fundamental;
 using QuantConnect.Data.Market;
 using QuantConnect.Data.UniverseSelection;
@@ -57,8 +56,8 @@ namespace QuantConnect.Tests.Engine.DataFeeds
         private static readonly Dictionary<Type, BaseData> _instances = new Dictionary<Type, BaseData>
         {
             {typeof(BaseData), typeof(TradeBar).GetBaseDataInstance() },
-            {typeof(BenzingaNews), typeof(BenzingaNews).GetBaseDataInstance() },
-            {typeof(TiingoNews), typeof(TiingoNews).GetBaseDataInstance() },
+            {typeof(IndexedLinkedData), typeof(IndexedLinkedData).GetBaseDataInstance() },
+            {typeof(IndexedLinkedData2), typeof(IndexedLinkedData2).GetBaseDataInstance() },
         };
 
         [SetUp]
@@ -1000,13 +999,13 @@ namespace QuantConnect.Tests.Engine.DataFeeds
             algorithm.AddSecurities(Resolution.Tick, Enumerable.Range(0, 20).Select(x => x.ToStringInvariant()).ToList());
             var getNextTicksFunction = Enumerable.Range(0, 20).Select(x => new Tick { Symbol = SymbolCache.GetSymbol(x.ToStringInvariant()) }).ToList();
             _feed.DataQueueHandler = new FuncDataQueueHandler(handler => getNextTicksFunction, new RealTimeProvider());
-            var mapFileProvider = new LocalDiskMapFileProvider();
+
             _feed.Initialize(
                 algorithm,
                 job,
                 resultHandler,
-                mapFileProvider,
-                new LocalDiskFactorFileProvider(mapFileProvider),
+                TestGlobals.MapFileProvider,
+                TestGlobals.FactorFileProvider,
                 fileProvider,
                 dataManager,
                 _synchronizer,
@@ -1278,7 +1277,6 @@ namespace QuantConnect.Tests.Engine.DataFeeds
             _dataQueueHandler = new FuncDataQueueHandlerUniverseProvider(getNextTicksFunction, lookupSymbolsFunction, canPerformSelection, _manualTimeProvider);
 
             _feed = new TestableLiveTradingDataFeed(_dataQueueHandler);
-            var mapFileProvider = new LocalDiskMapFileProvider();
             var fileProvider = new DefaultDataProvider();
             var marketHoursDatabase = MarketHoursDatabase.FromDataFolder();
             var symbolPropertiesDataBase = SymbolPropertiesDatabase.FromDataFolder();
@@ -1298,8 +1296,8 @@ namespace QuantConnect.Tests.Engine.DataFeeds
             _synchronizer = new TestableLiveSynchronizer(_manualTimeProvider, 500);
             _synchronizer.Initialize(_algorithm, _dataManager);
 
-            _feed.Initialize(_algorithm, job, resultHandler, mapFileProvider,
-                new LocalDiskFactorFileProvider(mapFileProvider), fileProvider, _dataManager, _synchronizer, new TestDataChannelProvider());
+            _feed.Initialize(_algorithm, job, resultHandler, TestGlobals.MapFileProvider,
+                TestGlobals.FactorFileProvider, fileProvider, _dataManager, _synchronizer, new TestDataChannelProvider());
 
             _algorithm.PostInitialize();
             Thread.Sleep(150); // small handicap for the data to be pumped so TimeSlices have data of all subscriptions
@@ -1406,12 +1404,14 @@ namespace QuantConnect.Tests.Engine.DataFeeds
             // Forex - FXCM
             new TestCaseData(Symbols.EURUSD, Resolution.Hour, 1, 0, 0, 24, 0, 0, false, _instances[typeof(BaseData)]),
             new TestCaseData(Symbols.EURUSD, Resolution.Minute, 1, 0, 0, 1 * 60, 0, 0, false, _instances[typeof(BaseData)]),
-            new TestCaseData(Symbols.EURUSD, Resolution.Tick, 1, 24, 0, 0, 0, 0, false, _instances[typeof(BaseData)]),
+            // emit at the start and end time
+            new TestCaseData(Symbols.EURUSD, Resolution.Tick, 1, 25, 0, 0, 0, 0, false, _instances[typeof(BaseData)]),
 
             // Forex - Oanda
             new TestCaseData(Symbol.Create("EURUSD", SecurityType.Forex, Market.Oanda), Resolution.Hour, 1, 0, 0, 24, 0, 0, false, _instances[typeof(BaseData)]),
             new TestCaseData(Symbol.Create("EURUSD", SecurityType.Forex, Market.Oanda), Resolution.Minute, 1, 0, 0, 1 * 60, 0, 0, false, _instances[typeof(BaseData)]),
-            new TestCaseData(Symbol.Create("EURUSD", SecurityType.Forex, Market.Oanda), Resolution.Tick, 1, 24, 0, 0, 0, 0, false, _instances[typeof(BaseData)]),
+            // emit at the start and end time
+            new TestCaseData(Symbol.Create("EURUSD", SecurityType.Forex, Market.Oanda), Resolution.Tick, 1, 25, 0, 0, 0, 0, false, _instances[typeof(BaseData)]),
 
             // CFD - FXCM
             new TestCaseData(Symbols.DE30EUR, Resolution.Hour, 1, 0, 0, 14, 0, 0, false, _instances[typeof(BaseData)]),
@@ -1419,22 +1419,22 @@ namespace QuantConnect.Tests.Engine.DataFeeds
             new TestCaseData(Symbols.DE30EUR, Resolution.Tick, 1, 14, 0, 0, 0, 0, false, _instances[typeof(BaseData)]),
 
             // CFD - Oanda
-            new TestCaseData(Symbol.Create("DE30EUR", SecurityType.Cfd, Market.Oanda), Resolution.Hour, 1, 0, 0, 14, 0, 0, false, _instances[typeof(BaseData)]),
+            new TestCaseData(Symbol.Create("DE30EUR", SecurityType.Cfd, Market.Oanda), Resolution.Hour, 1, 0, 0, 21, 0, 0, false, _instances[typeof(BaseData)]),
             new TestCaseData(Symbol.Create("DE30EUR", SecurityType.Cfd, Market.Oanda), Resolution.Minute, 1, 0, 0, 1 * 60, 0, 0, false, _instances[typeof(BaseData)]),
-            new TestCaseData(Symbol.Create("DE30EUR", SecurityType.Cfd, Market.Oanda), Resolution.Tick, 1, 14, 0, 0, 0, 0, false, _instances[typeof(BaseData)]),
+            new TestCaseData(Symbol.Create("DE30EUR", SecurityType.Cfd, Market.Oanda), Resolution.Tick, 1, 21, 0, 0, 0, 0, false, _instances[typeof(BaseData)]),
 
             // Crypto
             new TestCaseData(Symbols.BTCUSD, Resolution.Hour, 1, 0, 24, 24, 0, 0, false, _instances[typeof(BaseData)]),
             new TestCaseData(Symbols.BTCUSD, Resolution.Minute, 1, 0, 1 * 60, 1 * 60, 0, 0, false, _instances[typeof(BaseData)]),
-            // x2 because counting trades and quotes
-            new TestCaseData(Symbols.BTCUSD, Resolution.Tick, 1, 24 * 2, 0, 0, 0, 0, false, _instances[typeof(BaseData)]),
+            // x2 because counting trades and quotes. Emit at the start and end time
+            new TestCaseData(Symbols.BTCUSD, Resolution.Tick, 1, 25 * 2, 0, 0, 0, 0, false, _instances[typeof(BaseData)]),
 
             // Futures
             // ES has two session breaks totalling 1h 15m, so total trading hours = 22.75
             new TestCaseData(Symbols.Future_ESZ18_Dec2018, Resolution.Hour, 1, 0, 23, 23, 0, 0, false, _instances[typeof(BaseData)]),
             new TestCaseData(Symbols.Future_ESZ18_Dec2018, Resolution.Minute, 1, 0, 1 * 60, 1 * 60, 0, 0, false, _instances[typeof(BaseData)]),
-            // x2 because counting trades and quotes
-            new TestCaseData(Symbols.Future_ESZ18_Dec2018, Resolution.Tick, 1, 23 * 2, 0, 0, 0, 0, false, _instances[typeof(BaseData)]),
+            // x2 because counting trades and quotes. Emit at the start and end time
+            new TestCaseData(Symbols.Future_ESZ18_Dec2018, Resolution.Tick, 1, 24 * 2, 0, 0, 0, 0, false, _instances[typeof(BaseData)]),
 
             // Options
             new TestCaseData(Symbols.SPY_C_192_Feb19_2016, Resolution.Hour, 1, 0, 7, 7, 0, 0, false, _instances[typeof(BaseData)]),
@@ -1444,14 +1444,14 @@ namespace QuantConnect.Tests.Engine.DataFeeds
             new TestCaseData(Symbols.SPY_C_192_Feb19_2016, Resolution.Tick, 1, (7 - 1) * 2, 0, 0, 0, 0, false, _instances[typeof(BaseData)]),
 
             // Custom data not supported
-            new TestCaseData(Symbol.CreateBase(typeof(BenzingaNews), Symbols.AAPL, Market.USA), Resolution.Hour, 1, 0, 0, 0, 0, 24 * 2, true, _instances[typeof(BenzingaNews)]),
-            new TestCaseData(Symbol.CreateBase(typeof(BenzingaNews), Symbols.AAPL, Market.USA), Resolution.Minute, 1, 0, 0, 0, 0, 60 * 2, true, _instances[typeof(BenzingaNews)]),
-            new TestCaseData(Symbol.CreateBase(typeof(BenzingaNews), Symbols.AAPL, Market.USA), Resolution.Tick, 1, 0, 0, 0, 0, 24, true, _instances[typeof(BenzingaNews)]),
+            new TestCaseData(Symbol.CreateBase(typeof(IndexedLinkedData2), Symbols.AAPL, Market.USA), Resolution.Hour, 1, 0, 0, 0, 0, 24 * 2, true, _instances[typeof(IndexedLinkedData2)]),
+            new TestCaseData(Symbol.CreateBase(typeof(IndexedLinkedData2), Symbols.AAPL, Market.USA), Resolution.Minute, 1, 0, 0, 0, 0, 60 * 2, true, _instances[typeof(IndexedLinkedData2)]),
+            new TestCaseData(Symbol.CreateBase(typeof(IndexedLinkedData2), Symbols.AAPL, Market.USA), Resolution.Tick, 1, 0, 0, 0, 0, 24, true, _instances[typeof(IndexedLinkedData2)]),
 
-            // Custom data streamed
-            new TestCaseData(Symbol.CreateBase(typeof(TiingoNews), Symbols.AAPL, Market.USA), Resolution.Hour, 1, 0, 0, 0, 0, 24 * 2, false, _instances[typeof(TiingoNews)]),
-            new TestCaseData(Symbol.CreateBase(typeof(TiingoNews), Symbols.AAPL, Market.USA), Resolution.Minute, 1, 0, 0, 0, 0, 60 * 2, false, _instances[typeof(TiingoNews)]),
-            new TestCaseData(Symbol.CreateBase(typeof(TiingoNews), Symbols.AAPL, Market.USA), Resolution.Tick, 1, 0, 0, 0, 0, 24, false, _instances[typeof(TiingoNews)])
+            //// Custom data streamed
+            new TestCaseData(Symbol.CreateBase(typeof(IndexedLinkedData), Symbols.AAPL, Market.USA), Resolution.Hour, 1, 0, 0, 0, 0, 24 * 2, false, _instances[typeof(IndexedLinkedData)]),
+            new TestCaseData(Symbol.CreateBase(typeof(IndexedLinkedData), Symbols.AAPL, Market.USA), Resolution.Minute, 1, 0, 0, 0, 0, 60 * 2, false, _instances[typeof(IndexedLinkedData)]),
+            new TestCaseData(Symbol.CreateBase(typeof(IndexedLinkedData), Symbols.AAPL, Market.USA), Resolution.Tick, 1, 0, 0, 0, 0, 24, false, _instances[typeof(IndexedLinkedData)])
         };
 
         [TestCaseSource(nameof(DataTypeTestCases))]
@@ -1501,10 +1501,13 @@ namespace QuantConnect.Tests.Engine.DataFeeds
 
                 var utcTime = timeProvider.GetUtcNow();
                 var exchangeTime = utcTime.ConvertFromUtc(exchangeTimeZone);
-                if (exchangeTime == lastTime ||
-                    exchangeTime > endDate.ConvertTo(algorithmTimeZone, exchangeTimeZone))
+                var ended = exchangeTime > endDate.ConvertTo(algorithmTimeZone, exchangeTimeZone);
+                if (exchangeTime == lastTime || ended)
                 {
-                    emittedData.Set();
+                    if (ended)
+                    {
+                        emittedData.Set();
+                    }
                     return Enumerable.Empty<BaseData>();
                 }
 
@@ -1661,9 +1664,8 @@ namespace QuantConnect.Tests.Engine.DataFeeds
                     break;
             }
 
-            var mapFileProvider = new LocalDiskMapFileProvider();
             _feed.Initialize(algorithm, new LiveNodePacket(), new BacktestingResultHandler(),
-                mapFileProvider, new LocalDiskFactorFileProvider(mapFileProvider), fileProvider,
+                TestGlobals.MapFileProvider, TestGlobals.FactorFileProvider, fileProvider,
                 dataManager, _synchronizer, new TestDataChannelProvider());
 
             if (!dataQueueStarted.WaitOne(TimeSpan.FromMilliseconds(5000)))
@@ -1696,12 +1698,6 @@ namespace QuantConnect.Tests.Engine.DataFeeds
             try
             {
                 algorithm.PostInitialize();
-
-                // The custom exchange has to pick up the universe selection data point and push it into the universe subscription to
-                // trigger adding the securities. else there will be a race condition emitting the first data point and having a subscription
-                // to receive it
-                Thread.Sleep(200);
-
                 var actualTicksReceived = 0;
                 var actualTradeBarsReceived = 0;
                 var actualQuoteBarsReceived = 0;
@@ -1719,6 +1715,12 @@ namespace QuantConnect.Tests.Engine.DataFeeds
                     exchangeTimeZone = security.Exchange.TimeZone;
 
                     sliceCount++;
+
+                    // give enough time to the producer to emit
+                    if (sliceCount == 1 && !emittedData.WaitOne(300))
+                    {
+                        Assert.Fail("Timeout waiting for data generation");
+                    }
 
                     if (resolution == Resolution.Tick)
                     {
@@ -2159,9 +2161,8 @@ namespace QuantConnect.Tests.Engine.DataFeeds
                 throw new NotSupportedException($"Unsupported security type: {securityType}");
             }
 
-            var mapFileProvider = new LocalDiskMapFileProvider();
             _feed.Initialize(algorithm, new LiveNodePacket(), new BacktestingResultHandler(),
-                mapFileProvider, new LocalDiskFactorFileProvider(mapFileProvider), dataProvider,
+                TestGlobals.MapFileProvider, TestGlobals.FactorFileProvider, dataProvider,
                 dataManager, _synchronizer, new TestDataChannelProvider());
 
             var cancellationTokenSource = new CancellationTokenSource();
@@ -2346,13 +2347,13 @@ namespace QuantConnect.Tests.Engine.DataFeeds
 
     internal class TestDataChannelProvider : DataChannelProvider
     {
-        public override bool ShouldStreamSubscription(LiveNodePacket job, SubscriptionDataConfig config)
+        public override bool ShouldStreamSubscription(SubscriptionDataConfig config)
         {
-            if (config.Type == typeof(TiingoNews))
+            if (config.Type == typeof(IndexedLinkedData))
             {
                 return true;
             }
-            return base.ShouldStreamSubscription(job, config);
+            return base.ShouldStreamSubscription(config);
         }
     }
 

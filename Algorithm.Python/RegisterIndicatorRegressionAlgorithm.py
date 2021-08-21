@@ -1,4 +1,4 @@
-﻿# QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
+# QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
 # Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,20 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from clr import AddReference
-AddReference("System")
-AddReference("QuantConnect.Algorithm")
-AddReference("QuantConnect.Indicators")
-AddReference("QuantConnect.Common")
-
-from System import *
-from QuantConnect import *
-from QuantConnect.Algorithm import *
-from QuantConnect.Indicators import *
-from QuantConnect.Securities import *
-from QuantConnect.Data.Market import *
-from QuantConnect.Data.Consolidators import *
-from datetime import timedelta
+from AlgorithmImports import *
 from CustomDataRegressionAlgorithm import Bitcoin
 
 ### <summary>
@@ -57,13 +44,13 @@ class RegisterIndicatorRegressionAlgorithm(QCAlgorithm):
         consolidator = self.ResolveConsolidator(_symbol, timedelta(minutes=1), QuoteBar)
         # We specify a custom selector to be used
         self.RegisterIndicator(_symbol, indicator2, consolidator, lambda bar: self.SetSelectorCalled(0) and bar)
-        self._indicators.append(indicator2);
+        self._indicators.append(indicator2)
 
         # We use a IndicatorBase<IndicatorDataPoint> with QuoteBar data and a custom selector
         indicator3 = SimpleMovingAverage(10)
         consolidator = self.ResolveConsolidator(_symbol, timedelta(minutes=1), QuoteBar)
         self.RegisterIndicator(_symbol, indicator3, consolidator, lambda bar: self.SetSelectorCalled(1) and (bar.Ask.High - bar.Bid.Low))
-        self._indicators.append(indicator3);
+        self._indicators.append(indicator3)
 
         # We test default consolidator resolution works correctly
         movingAverage = SimpleMovingAverage(10)
@@ -71,7 +58,7 @@ class RegisterIndicatorRegressionAlgorithm(QCAlgorithm):
         self.RegisterIndicator(_symbol, movingAverage, Resolution.Minute, lambda bar: self.SetSelectorCalled(2) and bar.Volume)
         self._indicators.append(movingAverage)
 
-        movingAverage2 = SimpleMovingAverage(10);
+        movingAverage2 = SimpleMovingAverage(10)
         # Using Resolution
         self.RegisterIndicator(_symbol, movingAverage2, Resolution.Minute)
         self._indicators.append(movingAverage2)
@@ -100,7 +87,7 @@ class RegisterIndicatorRegressionAlgorithm(QCAlgorithm):
         smaCustomData3 = SimpleMovingAverage(1)
         consolidator = self.ResolveConsolidator(symbolCustom, timedelta(minutes=1))
         self.RegisterIndicator(symbolCustom, smaCustomData3, consolidator, lambda bar: self.SetSelectorCalled(5) and bar.Volume)
-        self._indicators.append(smaCustomData3);
+        self._indicators.append(smaCustomData3)
 
     def SetSelectorCalled(self, position):
         self._selectorCalled[position] = True
@@ -125,4 +112,4 @@ class CustomIndicator(PythonIndicator):
 
     def Update(self, input):
         self.Value = input.Ask.High
-        return True;
+        return True

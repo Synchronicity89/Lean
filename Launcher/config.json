@@ -67,10 +67,15 @@
   // To get your api access token go to quantconnect.com/account
   "job-user-id": "0",
   "api-access-token": "",
+  "job-organization-id": "",
 
   // live data configuration
   "live-data-url": "ws://www.quantconnect.com/api/v2/live/data/",
   "live-data-port": 8020,
+
+  // live portfolio state
+  "live-cash-balance": "",
+  "live-holdings": "[]",
 
   // interactive brokers configuration
   "ib-account": "",
@@ -120,6 +125,8 @@
   // binance configuration
   "binance-api-secret": "",
   "binance-api-key": "",
+  "binance-api-url": "https://api.binance.com",
+  "binance-websocket-url" :"wss://stream.binance.com:9443/ws",
 
   // arteyu configuration
   "atreyu-host": "",
@@ -127,6 +134,9 @@
   "atreyu-sub-port": "",
   "atreyu-username": "",
   "atreyu-password": "",
+  "atreyu-client-id": "",
+  "atreyu-broker-mpid": "",
+  "atreyu-locate-rqd": "",
 
   // Trading Technologies configuration
   "tt-user-name": "",
@@ -144,10 +154,6 @@
   "tt-order-routing-host": "",
   "tt-order-routing-port": "",
   "tt-log-fix-messages": false,
-
-  // Required to access data from Quiver Quantitative
-  // To get your access token go to https://api.quiverquant.com
-  "quiver-auth-token": "",
 
   // Required to access data from Quandl
   // To get your access token go to https://www.quandl.com/account/api
@@ -190,7 +196,7 @@
   },
 
   // specify supported languages when running regression tests
-  "regression-test-languages": ["CSharp", "Python"],
+  "regression-test-languages": [ "CSharp", "Python" ],
 
   "environments": {
 

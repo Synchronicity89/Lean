@@ -605,6 +605,7 @@ namespace QuantConnect.Securities
         {
             _setCashWasCalled = true;
             Cash item;
+            symbol = symbol.LazyToUpper();
             if (CashBook.TryGetValue(symbol, out item))
             {
                 item.SetAmount(cash);
@@ -714,8 +715,6 @@ namespace QuantConnect.Securities
 
             // we'll model this as a cash adjustment
             var leftOver = quantity - (int)quantity;
-            var extraCash = leftOver * split.ReferencePrice;
-            _baseCurrencyCash.AddAmount(extraCash);
 
             security.Holdings.SetHoldings(avgPrice, (int)quantity);
 
@@ -727,6 +726,7 @@ namespace QuantConnect.Securities
                 // will cause this to return null, in this case we can't possibly
                 // have any holdings or price to set since we haven't received
                 // data yet, so just do nothing
+                _baseCurrencyCash.AddAmount(leftOver * split.ReferencePrice * split.SplitFactor);
                 return;
             }
             next.Value *= split.SplitFactor;
@@ -749,6 +749,8 @@ namespace QuantConnect.Securities
             }
 
             security.SetMarketPrice(next);
+            _baseCurrencyCash.AddAmount(leftOver * next.Price);
+
             // security price updated
             InvalidateTotalPortfolioValue();
         }

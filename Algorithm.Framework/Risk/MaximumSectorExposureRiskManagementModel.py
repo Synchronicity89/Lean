@@ -1,4 +1,4 @@
-﻿# QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
+# QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
 # Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,8 +19,8 @@ AddReference("QuantConnect.Algorithm.Framework")
 
 from QuantConnect.Algorithm import *
 from QuantConnect.Algorithm.Framework import *
-from QuantConnect.Algorithm.Framework.Portfolio import PortfolioTarget, PortfolioTargetCollection
-from QuantConnect.Algorithm.Framework.Risk import RiskManagementModel
+from QuantConnect.Algorithm.Framework.Portfolio import *
+from QuantConnect.Algorithm.Framework.Risk import *
 from itertools import groupby
 
 class MaximumSectorExposureRiskManagementModel(RiskManagementModel):
@@ -92,7 +92,7 @@ class MaximumSectorExposureRiskManagementModel(RiskManagementModel):
         anyFundamentalData = any([
             kvp.Value.Fundamentals is not None and 
             kvp.Value.Fundamentals.HasFundamentalData for kvp in algorithm.ActiveSecurities
-            ]);
+            ])
 
         if not anyFundamentalData:
             raise Exception("MaximumSectorExposureRiskManagementModel.OnSecuritiesChanged: Please select a portfolio selection model that selects securities with fundamental data.")

@@ -88,7 +88,7 @@ namespace QuantConnect.Lean.Engine.Storage
             // create the root path if it does not exist
             Directory.CreateDirectory(AlgorithmStorageRoot);
 
-            Log.Trace($"LocalObjectStore.Initialize(): Storage Root: {new FileInfo(AlgorithmStorageRoot).FullName}");
+            Log.Trace($"LocalObjectStore.Initialize(): Storage Root: {new FileInfo(AlgorithmStorageRoot).FullName}. StorageFileCount {controls.StorageFileCount}. StorageLimitMB {controls.StorageLimitMB}");
 
             Controls = controls;
 
@@ -221,7 +221,7 @@ namespace QuantConnect.Lean.Engine.Storage
             // Verify we are within FileCount limit
             if (fileCount > Controls.StorageFileCount)
             {
-                var message = $"LocalObjectStore.InternalSaveBytes(): at file capacity: {fileCount}. Unable to save: '{key}'";
+                var message = $"LocalObjectStore.InternalSaveBytes(): You have reached the ObjectStore limit for files it can save: {fileCount}. Unable to save the new file: '{key}'";
                 Log.Error(message);
                 OnErrorRaised(new StorageLimitExceededException(message));
                 return false;

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -20,7 +20,6 @@ using QuantConnect.Orders;
 using QuantConnect.Orders.Fees;
 using QuantConnect.Securities;
 using System;
-using System.Collections.Concurrent;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using QuantConnect.Data;
@@ -29,8 +28,6 @@ namespace QuantConnect.Brokerages.Binance
 {
     public partial class BinanceBrokerage
     {
-        private readonly ConcurrentQueue<WebSocketMessage> _messageBuffer = new ConcurrentQueue<WebSocketMessage>();
-        private volatile bool _streamLocked;
         private readonly IDataAggregator _aggregator;
 
         /// <summary>
@@ -38,46 +35,10 @@ namespace QuantConnect.Brokerages.Binance
         /// </summary>
         protected readonly object TickLocker = new object();
 
-        /// <summary>
-        /// Lock the streaming processing while we're sending orders as sometimes they fill before the REST call returns.
-        /// </summary>
-        private void LockStream()
+        private void OnUserMessage(WebSocketMessage webSocketMessage)
         {
-            _streamLocked = true;
-        }
+            var e = (WebSocketClientWrapper.TextMessage)webSocketMessage.Data;
 
-        /// <summary>
-        /// Unlock stream and process all backed up messages.
-        /// </summary>
-        private void UnlockStream()
-        {
-            while (_messageBuffer.Any())
-            {
-                WebSocketMessage e;
-                _messageBuffer.TryDequeue(out e);
-
-                OnMessageImpl(e);
-            }
-
-            // Once dequeued in order; unlock stream.
-            _streamLocked = false;
-        }
-
-        private void WithLockedStream(Action code)
-        {
-            try
-            {
-                LockStream();
-                code();
-            }
-            finally
-            {
-                UnlockStream();
-            }
-        }
-
-        private void OnMessageImpl(WebSocketMessage e)
-        {
             try
             {
                 var obj = JObject.Parse(e.Message);
@@ -106,7 +67,41 @@ namespace QuantConnect.Brokerages.Binance
                                 OnFillOrder(upd);
                             }
                             break;
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Error, -1, $"Parsing wss message failed. Data: {e.Message} Exception: {exception}"));
+                throw;
+            }
+        }
 
+        private void OnDataMessage(WebSocketMessage webSocketMessage)
+        {
+            var e = (WebSocketClientWrapper.TextMessage)webSocketMessage.Data;
+
+            try
+            {
+                var obj = JObject.Parse(e.Message);
+
+                var objError = obj["error"];
+                if (objError != null)
+                {
+                    var error = objError.ToObject<ErrorMessage>();
+                    OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Error, error.Code, error.Message));
+                    return;
+                }
+
+                var objData = obj;
+
+                var objEventType = objData["e"];
+                if (objEventType != null)
+                {
+                    var eventType = objEventType.ToObject<string>();
+
+                    switch (eventType)
+                    {
                         case "trade":
                             var trade = objData.ToObject<Trade>();
                             EmitTradeTick(

@@ -21,6 +21,8 @@ using System.Collections.Immutable;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
@@ -50,7 +52,9 @@ using Timer = System.Timers.Timer;
 using static QuantConnect.StringExtensions;
 using Microsoft.IO;
 using NodaTime.TimeZones;
+using QuantConnect.Configuration;
 using QuantConnect.Data.Auxiliary;
+using QuantConnect.Exceptions;
 using QuantConnect.Securities.FutureOption;
 using QuantConnect.Securities.Option;
 
@@ -61,9 +65,11 @@ namespace QuantConnect
     /// </summary>
     public static class Extensions
     {
-        private static RecyclableMemoryStreamManager MemoryManager = new RecyclableMemoryStreamManager();
         private static ConcurrentBag<Guid> Guids = new ConcurrentBag<Guid>();
-        private static readonly HashSet<string> _invalidSecurityTypes = new HashSet<string>();
+        private static readonly HashSet<string> InvalidSecurityTypes = new HashSet<string>();
+        private static readonly Regex DateCheck = new Regex(@"\d{8}", RegexOptions.Compiled);
+        private static RecyclableMemoryStreamManager MemoryManager = new RecyclableMemoryStreamManager();
+        private static readonly int DataUpdatePeriod = Config.GetInt("api-data-update-period", 1);
 
         private static readonly Dictionary<IntPtr, PythonActivator> PythonActivators
             = new Dictionary<IntPtr, PythonActivator>();
@@ -86,6 +92,109 @@ namespace QuantConnect
         /// like future options the market close would match the delisted event time and would cancel all orders and mark the security
         /// as non tradable and delisted.</remarks>
         public static TimeSpan DelistingMarketCloseOffsetSpan { get; set; } = TimeSpan.FromMinutes(-15);
+
+        /// <summary>
+        /// Determine if the file is out of date according to our download period.
+        /// Date based files are never out of date (Files with YYYYMMDD)
+        /// </summary>
+        /// <param name="filepath">Path to the file</param>
+        /// <returns>True if the file is out of date</returns>
+        public static bool IsOutOfDate(this string filepath)
+        {
+            var fileName = Path.GetFileName(filepath);
+            // helper to determine if file is date based using regex, matches a 8 digit value because we expect YYYYMMDD
+            return !DateCheck.IsMatch(fileName) && DateTime.Now - TimeSpan.FromDays(DataUpdatePeriod) > File.GetLastWriteTime(filepath);
+        }
+
+        /// <summary>
+        /// Tries to fetch the custom data type associated with a symbol
+        /// </summary>
+        /// <remarks>Custom data type <see cref="SecurityIdentifier"/> symbol value holds their data type</remarks>
+        public static bool TryGetCustomDataType(this string symbol, out string type)
+        {
+            type = null;
+            if (symbol != null)
+            {
+                var index = symbol.LastIndexOf('.');
+                if (index != -1 && symbol.Length > index + 1)
+                {
+                    type = symbol.Substring(index + 1);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Helper method to get a market hours entry
+        /// </summary>
+        /// <param name="marketHoursDatabase">The market hours data base instance</param>
+        /// <param name="symbol">The symbol to get the entry for</param>
+        /// <param name="dataTypes">For custom data types can optionally provide data type so that a new entry is added</param>
+        public static MarketHoursDatabase.Entry GetEntry(this MarketHoursDatabase marketHoursDatabase, Symbol symbol, IEnumerable<Type> dataTypes)
+        {
+            if (symbol.SecurityType == SecurityType.Base)
+            {
+                if (!marketHoursDatabase.TryGetEntry(symbol.ID.Market, symbol, symbol.ID.SecurityType, out var entry))
+                {
+                    var type = dataTypes.Single();
+                    var baseInstance = type.GetBaseDataInstance();
+                    baseInstance.Symbol = symbol;
+                    symbol.ID.Symbol.TryGetCustomDataType(out var customType);
+                    // for custom types we will add an entry for that type
+                    entry = marketHoursDatabase.SetEntryAlwaysOpen(symbol.ID.Market, customType != null ? $"TYPE.{customType}" : null, SecurityType.Base, baseInstance.DataTimeZone());
+                }
+                return entry;
+            }
+
+            return marketHoursDatabase.GetEntry(symbol.ID.Market, symbol, symbol.ID.SecurityType);
+        }
+
+        /// <summary>
+        /// Helper method to download a provided url as a string
+        /// </summary>
+        /// <param name="url">The url to download data from</param>
+        public static string DownloadData(this string url)
+        {
+            using (var client = new HttpClient())
+            {
+                try
+                {
+                    using (var response = client.GetAsync(url).Result)
+                    {
+                        using (var content = response.Content)
+                        {
+                            return content.ReadAsStringAsync().Result;
+                        }
+                    }
+                }
+                catch (WebException ex)
+                {
+                    Log.Error(ex, $"DownloadData(): failed for: '{url}'");
+                    // If server returned an error most likely on this day there is no data we are going to the next cycle
+                    return null;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Helper method to create an order request to liquidate a delisted asset
+        /// </summary>
+        public static SubmitOrderRequest CreateDelistedSecurityOrderRequest(this Security security, DateTime utcTime)
+        {
+            var orderType = OrderType.Market;
+            var tag = "Liquidate from delisting";
+            if (security.Type.IsOption())
+            {
+                // tx handler will determine auto exercise/assignment
+                tag = "Option Expired";
+                orderType = OrderType.OptionExercise;
+            }
+
+            // submit an order to liquidate on market close or exercise (for options)
+            return new SubmitOrderRequest(orderType, security.Type, security.Symbol,
+                -security.Holdings.Quantity, 0, 0, utcTime, tag);
+        }
 
         /// <summary>
         /// Safe multiplies a decimal by 100
@@ -277,6 +386,12 @@ namespace QuantConnect
                         // this way we only keep the most updated version
                         resultPacket.Orders = resultPacket.Orders.GroupBy(order => order.Id)
                             .Select(ordersGroup => ordersGroup.Last()).ToList();
+                    }
+
+                    if (newerPacket.Portfolio != null)
+                    {
+                        // we just keep the newest state if not null
+                        resultPacket.Portfolio = newerPacket.Portfolio;
                     }
                 }
             }
@@ -636,6 +751,80 @@ namespace QuantConnect
                 hash.Append(theByte.ToStringInvariant("x2"));
             }
             return hash.ToString();
+        }
+
+        /// <summary>
+        /// Converts a long to an uppercase alpha numeric string
+        /// </summary>
+        public static string EncodeBase36(this ulong data)
+        {
+            var stack = new Stack<char>(15);
+            while (data != 0)
+            {
+                var value = data % 36;
+                var c = value < 10
+                    ? (char)(value + '0')
+                    : (char)(value - 10 + 'A');
+
+                stack.Push(c);
+                data /= 36;
+            }
+            return new string(stack.ToArray());
+        }
+
+        /// <summary>
+        /// Converts an upper case alpha numeric string into a long
+        /// </summary>
+        public static ulong DecodeBase36(this string symbol)
+        {
+            var result = 0ul;
+            var baseValue = 1ul;
+            for (var i = symbol.Length - 1; i > -1; i--)
+            {
+                var c = symbol[i];
+
+                // assumes alpha numeric upper case only strings
+                var value = (uint)(c <= 57
+                    ? c - '0'
+                    : c - 'A' + 10);
+
+                result += baseValue * value;
+                baseValue *= 36;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Convert a string to Base64 Encoding
+        /// </summary>
+        /// <param name="text">Text to encode</param>
+        /// <returns>Encoded result</returns>
+        public static string EncodeBase64(this string text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return text;
+            }
+
+            byte[] textBytes = Encoding.UTF8.GetBytes(text);
+            return Convert.ToBase64String(textBytes);
+        }
+
+        /// <summary>
+        /// Decode a Base64 Encoded string
+        /// </summary>
+        /// <param name="base64EncodedText">Text to decode</param>
+        /// <returns>Decoded result</returns>
+        public static string DecodeBase64(this string base64EncodedText)
+        {
+            if (string.IsNullOrEmpty(base64EncodedText))
+            {
+                return base64EncodedText;
+            }
+
+            byte[] base64EncodedBytes = Convert.FromBase64String(base64EncodedText);
+            return Encoding.UTF8.GetString(base64EncodedBytes);
         }
 
         /// <summary>
@@ -1630,7 +1819,7 @@ namespace QuantConnect
                 return true;
             }
 
-            if (_invalidSecurityTypes.Add(value))
+            if (InvalidSecurityTypes.Add(value))
             {
                 Log.Error($"Extensions.TryParseSecurityType(): Attempted to parse unknown SecurityType: {value}");
             }
@@ -2547,6 +2736,16 @@ namespace QuantConnect
         }
 
         /// <summary>
+        /// Safely blocks until the specified task has completed executing
+        /// </summary>
+        /// <param name="task">The task to be awaited</param>
+        /// <returns>The result of the task</returns>
+        public static T SynchronouslyAwaitTask<T>(this Task<T> task)
+        {
+            return task.ConfigureAwait(false).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
         /// Convert dictionary to query string
         /// </summary>
         /// <param name="pairs"></param>
@@ -2622,6 +2821,16 @@ namespace QuantConnect
         }
 
         /// <summary>
+        /// Helper method to determine if a given symbol is of custom data
+        /// </summary>
+        public static bool IsCustomDataType<T>(this Symbol symbol)
+        {
+            return symbol.SecurityType == SecurityType.Base
+                && symbol.ID.Symbol.TryGetCustomDataType(out var type)
+                && type.Equals(typeof(T).Name, StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        /// <summary>
         /// Returns the delisted liquidation time for a given delisting warning and exchange hours
         /// </summary>
         /// <param name="delisting">The delisting warning event</param>
@@ -2660,7 +2869,12 @@ namespace QuantConnect
         /// <summary>
         /// Scale data based on factor function
         /// </summary>
-        public static BaseData Scale(this BaseData data, Func<decimal, decimal> factor)
+        /// <param name="data">Data to Adjust</param>
+        /// <param name="factor">Function to factor prices by</param>
+        /// <param name="volumeFactor">Factor to multiply volume/askSize/bidSize/quantity by</param>
+        /// <remarks>Volume values are rounded to the nearest integer, lot size purposefully not considered
+        /// as scaling only applies to equities</remarks>
+        public static BaseData Scale(this BaseData data, Func<decimal, decimal> factor, decimal volumeFactor)
         {
             switch (data.DataType)
             {
@@ -2672,6 +2886,7 @@ namespace QuantConnect
                         tradeBar.High = factor(tradeBar.High);
                         tradeBar.Low = factor(tradeBar.Low);
                         tradeBar.Close = factor(tradeBar.Close);
+                        tradeBar.Volume = Math.Round(tradeBar.Volume * volumeFactor);
                     }
                     break;
                 case MarketDataType.Tick:
@@ -2692,11 +2907,14 @@ namespace QuantConnect
                     if (tick.TickType == TickType.Trade)
                     {
                         tick.Value = factor(tick.Value);
+                        tick.Quantity = Math.Round(tick.Quantity * volumeFactor);
                         break;
                     }
 
                     tick.BidPrice = tick.BidPrice != 0 ? factor(tick.BidPrice) : 0;
+                    tick.BidSize = Math.Round(tick.BidSize * volumeFactor);
                     tick.AskPrice = tick.AskPrice != 0 ? factor(tick.AskPrice) : 0;
+                    tick.AskSize = Math.Round(tick.AskSize * volumeFactor);
 
                     if (tick.BidPrice == 0)
                     {
@@ -2730,6 +2948,8 @@ namespace QuantConnect
                             quoteBar.Bid.Close = factor(quoteBar.Bid.Close);
                         }
                         quoteBar.Value = quoteBar.Close;
+                        quoteBar.LastAskSize = Math.Round(quoteBar.LastAskSize * volumeFactor);
+                        quoteBar.LastBidSize = Math.Round(quoteBar.LastBidSize * volumeFactor);
                     }
                     break;
                 case MarketDataType.Auxiliary:
@@ -2751,7 +2971,7 @@ namespace QuantConnect
         /// <returns></returns>
         public static BaseData Normalize(this BaseData data, SubscriptionDataConfig config)
         {
-            return data?.Scale(p => config.GetNormalizedPrice(p));
+            return data?.Scale(p => config.GetNormalizedPrice(p), 1/config.PriceScaleFactor);
         }
 
         /// <summary>
@@ -2762,7 +2982,7 @@ namespace QuantConnect
         /// <returns></returns>
         public static BaseData Adjust(this BaseData data, decimal scale)
         {
-            return data?.Scale(p => p * scale);
+            return data?.Scale(p => p * scale, 1/scale);
         }
 
         /// <summary>
@@ -2821,6 +3041,17 @@ namespace QuantConnect
                         $"The skies are falling and the oceans are rising! Math.Sign({quantity}) returned {sign} :/"
                     );
             }
+        }
+
+        /// <summary>
+        /// Helper method to set an algorithm runtime exception in a normalized fashion
+        /// </summary>
+        public static void SetRuntimeError(this IAlgorithm algorithm, Exception exception, string context)
+        {
+            Log.Error(exception, $"Extensions.SetRuntimeError(): RuntimeError at {algorithm.UtcTime} UTC. Context: {context}");
+            exception = StackExceptionInterpreter.Instance.Value.Interpret(exception);
+            algorithm.RunTimeError = exception;
+            algorithm.SetStatus(AlgorithmStatus.RuntimeError);
         }
 
         /// <summary>
@@ -2918,6 +3149,33 @@ namespace QuantConnect
         }
 
         /// <summary>
+        /// Converts a <see cref="Data.HistoryRequest" /> instance to a <see cref="SubscriptionDataConfig"/> instance
+        /// </summary>
+        /// <param name="request">History request</param>
+        /// <param name="isInternalFeed">
+        /// Set to true if this subscription is added for the sole purpose of providing currency conversion rates,
+        /// setting this flag to true will prevent the data from being sent into the algorithm's OnData methods
+        /// </param>
+        /// <param name="isFilteredSubscription">True if this subscription should have filters applied to it (market hours/user filters from security), false otherwise</param>
+        /// <returns>Subscription data configuration</returns>
+        public static SubscriptionDataConfig ToSubscriptionDataConfig(this Data.HistoryRequest request, bool isInternalFeed = false, bool isFilteredSubscription = true)
+        {
+            return new SubscriptionDataConfig(request.DataType,
+                request.Symbol,
+                request.Resolution,
+                request.DataTimeZone,
+                request.ExchangeHours.TimeZone,
+                request.FillForwardResolution.HasValue,
+                request.IncludeExtendedMarketHours,
+                isInternalFeed,
+                request.IsCustomData,
+                request.TickType,
+                isFilteredSubscription,
+                request.DataNormalizationMode
+            );
+        }
+
+        /// <summary>
         /// Centralized logic used at the top of the subscription enumerator stacks to determine if we should emit base data points
         /// based on the configuration for this subscription and the type of data we are handling.
         /// 
@@ -2933,7 +3191,7 @@ namespace QuantConnect
         /// dependency with the FF enumerators requiring that they receive aux data to properly handle delistings.
         /// Otherwise we would have issues with delisted symbols continuing to fill forward after expiry/delisting.
         /// Reference PR #5485 and related issues for more.</remarks>
-        public static bool ShouldEmitData(this SubscriptionDataConfig config, BaseData data)
+        public static bool ShouldEmitData(this SubscriptionDataConfig config, BaseData data, bool isUniverse = false)
         {
             // For now we are only filtering Auxiliary data; so if its another type just return true
             if (data.DataType != MarketDataType.Auxiliary)
@@ -2952,6 +3210,18 @@ namespace QuantConnect
 
             // This filter does not apply to auxiliary data outside of delisting/splits/dividends so lets those emit
             var type = data.GetType();
+
+            // We don't want to pump in any data to `Universe.SelectSymbols(...)` if the
+            // type is not configured to be consumed by the universe. This change fixes
+            // a case where a `SymbolChangedEvent` was being passed to an ETF constituent universe
+            // for filtering/selection, and would result in either a runtime error
+            // if casting into the expected type explicitly, or call the filter function with
+            // no data being provided, resulting in all universe Symbols being de-selected.
+            if (isUniverse && !type.IsAssignableFrom(config.Type))
+            {
+                return (data as Delisting)?.Type == DelistingType.Delisted;
+            }
+            
             if (!(type == typeof(Delisting) || type == typeof(Split) || type == typeof(Dividend)))
             {
                 return true;
@@ -3061,6 +3331,37 @@ namespace QuantConnect
                 }
 
                 return hashCode;
+            }
+        }
+
+        /// <summary>
+        /// Read all lines from a stream reader
+        /// </summary>
+        /// <param name="reader">Stream reader to read from</param>
+        /// <returns>Enumerable of lines in stream</returns>
+        public static IEnumerable<string> ReadAllLines(this StreamReader reader)
+        {
+            string line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                yield return line;
+            }
+        }
+
+        /// <summary>
+        /// Determine if this SecurityType requires mapping
+        /// </summary>
+        /// <param name="securityType">Type to check</param>
+        /// <returns>True if it needs to be mapped</returns>
+        public static bool RequiresMapping(this SecurityType securityType)
+        {
+            switch (securityType)
+            {
+                case SecurityType.Equity:
+                case SecurityType.Option:
+                    return true;
+                default:
+                    return false;
             }
         }
     }

@@ -1,11 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <RootNamespace>QuantConnect.Brokerages</RootNamespace>
     <AssemblyName>QuantConnect.Brokerages</AssemblyName>
     <TargetFramework>net5.0</TargetFramework>
-    <LangVersion>6</LangVersion>
+    <LangVersion>9</LangVersion>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
     <DefineConstants>NET45</DefineConstants>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -36,21 +36,10 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="NETStandard.Library" Version="2.0.3" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="NodaTime" Version="3.0.5" />
-    <PackageReference Include="QuantConnect.IBAutomater" Version="1.0.51" />
-    <PackageReference Include="RestSharp" Version="106.6.10" />
-    <PackageReference Include="System.ComponentModel.Composition" Version="5.0.0" />
-    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="4.3.0" />
-    <PackageReference Include="System.Security.Cryptography.Encoding" Version="4.3.0" />
-    <PackageReference Include="System.Security.Cryptography.Primitives" Version="4.3.0" />
-    <PackageReference Include="System.Security.Cryptography.X509Certificates" Version="4.3.0" />
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="CSharpAPI">
-      <HintPath>InteractiveBrokers\CSharpAPI.dll</HintPath>
-    </Reference>
+    <PackageReference Include="QuantConnect.IBAutomater" Version="2.0.52" />
+    <PackageReference Include="RestSharp" Version="106.12.0" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\Common\Properties\SharedAssemblyInfo.cs" Link="Properties\SharedAssemblyInfo.cs" />
@@ -70,5 +59,20 @@
     <ProjectReference Include="..\Compression\QuantConnect.Compression.csproj" />
     <ProjectReference Include="..\Configuration\QuantConnect.Configuration.csproj" />
     <ProjectReference Include="..\Logging\QuantConnect.Logging.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="CSharpAPI">
+      <HintPath>CSharpAPI.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="CSharpAPI.dll" Pack="True">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </None>
+    <None Update="CSharpAPI.deps.json" Pack="True">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </None>
   </ItemGroup>
 </Project>

@@ -11,18 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from clr import AddReference
-AddReference("System")
-AddReference("QuantConnect.Algorithm")
-AddReference("QuantConnect.Common")
-
-from System import *
-from QuantConnect import *
-from QuantConnect.Algorithm import *
-from QuantConnect.Securities import *
-from QuantConnect.Data.Market import *
-from QuantConnect.Orders import *
-from datetime import *
+from AlgorithmImports import *
 
 class MarketOnCloseOrderBufferRegressionAlgorithm(QCAlgorithm):
 
@@ -50,7 +39,7 @@ class MarketOnCloseOrderBufferRegressionAlgorithm(QCAlgorithm):
 
     def OnEndOfAlgorithm(self):
         # Set it back to default for other regressions
-        MarketOnCloseOrder.SubmissionTimeBuffer = MarketOnCloseOrder.DefaultSubmissionTimeBuffer;
+        MarketOnCloseOrder.SubmissionTimeBuffer = MarketOnCloseOrder.DefaultSubmissionTimeBuffer
 
         if self.validOrderTicket.Status != OrderStatus.Filled:
             raise Exception("Valid order failed to fill")

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -56,7 +56,7 @@ namespace QuantConnect.Tests.Engine.DataFeeds
             );
             var timeZoneOffsetProvider = new TimeZoneOffsetProvider(DateTimeZone.Utc, start, end);
             var enumerator = new EnqueueableEnumerator<BaseData>();
-            var subscriptionDataEnumerator = new SubscriptionDataEnumerator(config, security.Exchange.Hours, timeZoneOffsetProvider, enumerator);
+            var subscriptionDataEnumerator = new SubscriptionDataEnumerator(config, security.Exchange.Hours, timeZoneOffsetProvider, enumerator, false);
             var subscriptionRequest = new SubscriptionRequest(false, null, security, config, start, end);
             var subscription = new Subscription(subscriptionRequest, subscriptionDataEnumerator, timeZoneOffsetProvider);
 
@@ -385,7 +385,8 @@ namespace QuantConnect.Tests.Engine.DataFeeds
                     new OptionSymbolProperties(SymbolProperties.GetDefault(Currencies.USD)),
                     ErrorCurrencyConverter.Instance,
                     RegisteredSecurityDataTypesProvider.Null,
-                    new SecurityCache()
+                    new SecurityCache(),
+                    null
                 );
             }
             else if (type == SecurityType.Future)
@@ -408,7 +409,7 @@ namespace QuantConnect.Tests.Engine.DataFeeds
             var config = new SubscriptionDataConfig(typeof(TradeBar), _symbol, resolution, DateTimeZone.Utc, DateTimeZone.Utc, true, false, isInternalFeed, false, tickType);
             var timeZoneOffsetProvider = new TimeZoneOffsetProvider(DateTimeZone.Utc, start, end);
             var enumerator = new EnqueueableEnumerator<BaseData>();
-            var subscriptionDataEnumerator = new SubscriptionDataEnumerator(config, security.Exchange.Hours, timeZoneOffsetProvider, enumerator);
+            var subscriptionDataEnumerator = new SubscriptionDataEnumerator(config, security.Exchange.Hours, timeZoneOffsetProvider, enumerator, false);
             var subscriptionRequest = new SubscriptionRequest(false, null, security, config, start, end);
             return new Subscription(subscriptionRequest, subscriptionDataEnumerator, timeZoneOffsetProvider);
         }

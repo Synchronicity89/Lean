@@ -242,11 +242,6 @@ namespace QuantConnect.Tests.Common.Securities
                 Assert.AreEqual((double)mchJwb, (double)(mchUsd*usdJwb), 1e-10);
                 //Console.WriteLine("Step: " + i + " -- MCHJWB: " + mchJwb);
 
-
-                jwbCash.Update(new IndicatorDataPoint(MCHJWB, time, mchJwb));
-                usdCash.Update(new IndicatorDataPoint(MCHUSD, time, mchUsd));
-                mchCash.Update(new IndicatorDataPoint(JWBUSD, time, usdJwb));
-
                 var updateData = new Dictionary<Security, BaseData>
                 {
                     {mchJwbSecurity, new IndicatorDataPoint(MCHJWB, time, mchJwb)},
@@ -258,6 +253,10 @@ namespace QuantConnect.Tests.Common.Securities
                 {
                     kvp.Key.SetMarketPrice(kvp.Value);
                 }
+
+                jwbCash.Update();
+                usdCash.Update();
+                mchCash.Update();
 
                 portfolio.ProcessFill(fill);
                 //Console.WriteLine("-----------------------");
@@ -2463,7 +2462,6 @@ namespace QuantConnect.Tests.Common.Securities
             Assert.AreEqual(-1, securities[Symbols.SPY_P_192_Feb19_2016].Holdings.Quantity);
         }
 
-        [Test]
         [TestCase(DataNormalizationMode.Adjusted)]
         [TestCase(DataNormalizationMode.Raw)]
         [TestCase(DataNormalizationMode.SplitAdjusted)]
@@ -2472,6 +2470,7 @@ namespace QuantConnect.Tests.Common.Securities
         {
             var algorithm = new QCAlgorithm();
             algorithm.SubscriptionManager.SetDataManager(new DataManagerStub(algorithm));
+            algorithm.UniverseSettings.DataNormalizationMode = mode;
             algorithm.SetLiveMode(true);
             var initialCash = algorithm.Portfolio.CashBook.TotalValueInAccountCurrency;
 
@@ -2492,7 +2491,41 @@ namespace QuantConnect.Tests.Common.Securities
             Assert.AreEqual(initialCash, algorithm.Portfolio.CashBook.TotalValueInAccountCurrency);
         }
 
-        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        public void SplitPartialSharesHandling(bool hasData)
+        {
+            var algorithm = new QCAlgorithm();
+            algorithm.SubscriptionManager.SetDataManager(new DataManagerStub(algorithm));
+            algorithm.SetLiveMode(true);
+            var initialCash = algorithm.Portfolio.CashBook.TotalValueInAccountCurrency;
+
+            var spy = algorithm.AddEquity("SPY");
+            if (hasData)
+            {
+                spy.SetMarketPrice(new Tick(new DateTime(2000, 01, 01), Symbols.SPY, 100m, 99m, 101m) { TickType = TickType.Trade });
+            }
+            spy.Holdings.SetHoldings(100m, 100);
+
+            var split = new Split(Symbols.SPY, new DateTime(2000, 01, 01), 100, 0.49999m, SplitType.SplitOccurred);
+            var newAvgPrice = spy.Holdings.AveragePrice * split.SplitFactor;
+            var newQuantity = spy.Holdings.Quantity / split.SplitFactor;
+            var leftOver = newQuantity - (int)newQuantity;
+
+            algorithm.Portfolio.ApplySplit(split,
+                algorithm.LiveMode,
+                algorithm.SubscriptionManager.SubscriptionDataConfigService
+                    .GetSubscriptionDataConfigs(spy.Symbol)
+                    .DataNormalizationMode());
+
+            // confirm the split was properly applied to our holdings, no left over cash from split
+            Assert.AreEqual(newAvgPrice, spy.Holdings.AveragePrice);
+            Assert.AreEqual((int)newQuantity, spy.Holdings.Quantity);
+
+            var cashDifference = leftOver * split.Price * split.SplitFactor;
+            Assert.AreEqual(initialCash + cashDifference, algorithm.Portfolio.CashBook.TotalValueInAccountCurrency);
+        }
+
         [TestCase(DataNormalizationMode.Adjusted)]
         [TestCase(DataNormalizationMode.Raw)]
         [TestCase(DataNormalizationMode.SplitAdjusted)]
@@ -2500,6 +2533,7 @@ namespace QuantConnect.Tests.Common.Securities
         public void NeverAppliesDividendInLiveMode(DataNormalizationMode mode)
         {
             var algorithm = new QCAlgorithm();
+            algorithm.UniverseSettings.DataNormalizationMode = mode;
             algorithm.SubscriptionManager.SetDataManager(new DataManagerStub(algorithm));
             algorithm.SetLiveMode(true);
             var initialCash = algorithm.Portfolio.CashBook.TotalValueInAccountCurrency;

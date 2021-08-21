@@ -52,6 +52,11 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
     [BrokerageFactory(typeof(InteractiveBrokersBrokerageFactory))]
     public sealed class InteractiveBrokersBrokerage : Brokerage, IDataQueueHandler, IDataQueueUniverseProvider
     {
+        /// <summary>
+        /// The default gateway version to use
+        /// </summary>
+        public static string DefaultVersion { get; } = "985";
+
         private readonly IBAutomater.IBAutomater _ibAutomater;
 
         // Existing orders created in TWS can *only* be cancelled/modified when connected with ClientId = 0
@@ -71,6 +76,7 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
         private readonly ISecurityProvider _securityProvider;
         private readonly IDataAggregator _aggregator;
         private readonly IB.InteractiveBrokersClient _client;
+        private readonly int _ibVersion;
         private readonly string _agentDescription;
         private readonly EventBasedDataQueueHandlerSubscriptionManager _subscriptionManager;
 
@@ -167,22 +173,7 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
         /// <param name="aggregator">consolidate ticks</param>
         /// <param name="mapFileProvider">representing all the map files</param>
         public InteractiveBrokersBrokerage(IAlgorithm algorithm, IOrderProvider orderProvider, ISecurityProvider securityProvider, IDataAggregator aggregator, IMapFileProvider mapFileProvider)
-            : this(
-                algorithm,
-                orderProvider,
-                securityProvider,
-                aggregator,
-                mapFileProvider,
-                Config.Get("ib-account"),
-                Config.Get("ib-host", "LOCALHOST"),
-                Config.GetInt("ib-port", 4001),
-                Config.Get("ib-tws-dir"),
-                Config.Get("ib-version", "974"),
-                Config.Get("ib-user-name"),
-                Config.Get("ib-password"),
-                Config.Get("ib-trading-mode"),
-                Config.GetValue("ib-agent-description", IB.AgentDescription.Individual)
-                )
+            : this(algorithm, orderProvider, securityProvider, aggregator, mapFileProvider, Config.Get("ib-account"))
         {
         }
 
@@ -206,7 +197,7 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
                 Config.Get("ib-host", "LOCALHOST"),
                 Config.GetInt("ib-port", 4001),
                 Config.Get("ib-tws-dir"),
-                Config.Get("ib-version", "974"),
+                Config.Get("ib-version", DefaultVersion),
                 Config.Get("ib-user-name"),
                 Config.Get("ib-password"),
                 Config.Get("ib-trading-mode"),
@@ -259,6 +250,7 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
             _account = account;
             _host = host;
             _port = port;
+            _ibVersion = Convert.ToInt32(ibVersion, CultureInfo.InvariantCulture);
             _agentDescription = agentDescription;
 
             _symbolMapper = new InteractiveBrokersSymbolMapper(mapFileProvider);
@@ -270,10 +262,12 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
             Log.Trace("InteractiveBrokersBrokerage.InteractiveBrokersBrokerage(): Starting IB Automater...");
 
             // start IB Gateway
-            _ibAutomater = new IBAutomater.IBAutomater(ibDirectory, ibVersion, userName, password, tradingMode, port);
+            var exportIbGatewayLogs = Config.GetBool("ib-export-ibgateway-logs");
+            _ibAutomater = new IBAutomater.IBAutomater(ibDirectory, ibVersion, userName, password, tradingMode, port, exportIbGatewayLogs);
             _ibAutomater.OutputDataReceived += OnIbAutomaterOutputDataReceived;
             _ibAutomater.ErrorDataReceived += OnIbAutomaterErrorDataReceived;
             _ibAutomater.Exited += OnIbAutomaterExited;
+            _ibAutomater.Restarted += OnIbAutomaterRestarted;
 
             CheckIbAutomaterError(_ibAutomater.Start(false));
 
@@ -809,8 +803,8 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
                         }
                     }
 
-                    // enable detailed logging
-                    _client.ClientSocket.setServerLogLevel(5);
+                    // enable logging at Warning level
+                    _client.ClientSocket.setServerLogLevel(3);
 
                     break;
                 }
@@ -2276,10 +2270,13 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
                 case Resolution.Tick:
                 case Resolution.Second:
                     return IB.BarSize.OneSecond;
+
                 case Resolution.Minute:
                     return IB.BarSize.OneMinute;
+
                 case Resolution.Hour:
                     return IB.BarSize.OneHour;
+
                 case Resolution.Daily:
                 default:
                     return IB.BarSize.OneDay;
@@ -2297,11 +2294,14 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
             {
                 case Resolution.Tick:
                 case Resolution.Second:
-                    return "60 S";
+                    return "1800 S";
+
                 case Resolution.Minute:
                     return "1 D";
+
                 case Resolution.Hour:
                     return "1 M";
+
                 case Resolution.Daily:
                 default:
                     return "1 Y";
@@ -2335,7 +2335,6 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
             return new Holding
             {
                 Symbol = symbol,
-                Type = symbol.SecurityType,
                 Quantity = e.Position,
                 AveragePrice = Convert.ToDecimal(e.AverageCost) / multiplier,
                 MarketPrice = Convert.ToDecimal(e.MarketPrice),
@@ -2735,12 +2734,13 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
         /// <summary>
         /// Modifies the quantity received from IB based on the security type
         /// </summary>
-        public static int AdjustQuantity(SecurityType type, int size)
+        public int AdjustQuantity(SecurityType type, int size)
         {
             switch (type)
             {
                 case SecurityType.Equity:
-                    return size * 100;
+                    // Effective in TWS version 985 and later, for US stocks the bid, ask, and last size quotes are shown in shares (not in lots).
+                    return _ibVersion < 985 ? size * 100 : size;
                 default:
                     return size;
             }
@@ -3100,7 +3100,11 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
 
             foreach (var bar in history.Where(bar => bar.Time >= requestStartTime && bar.EndTime <= requestEndTime))
             {
-                yield return bar;
+                if (request.Symbol.SecurityType == SecurityType.Equity ||
+                    request.ExchangeHours.IsOpen(bar.Time, bar.EndTime, request.IncludeExtendedMarketHours))
+                {
+                    yield return bar;
+                }
             }
 
             Log.Trace($"InteractiveBrokersBrokerage::GetHistory(): Download completed: {request.Symbol.Value} ({GetContractDescription(contract)})");
@@ -3122,7 +3126,11 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
             var dataDownloading = new AutoResetEvent(false);
             var dataDownloaded = new AutoResetEvent(false);
 
-            var useRegularTradingHours = Convert.ToInt32(!request.IncludeExtendedMarketHours);
+            // This is needed because when useRTH is set to 1, IB will return data only
+            // during Equity regular trading hours (for any asset type, not only for equities)
+            var useRegularTradingHours = request.Symbol.SecurityType == SecurityType.Equity
+                ? Convert.ToInt32(!request.IncludeExtendedMarketHours)
+                : 0;
 
             // making multiple requests if needed in order to download the history
             while (endTime >= startTime)
@@ -3215,7 +3223,7 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
                 history.InsertRange(0, filteredPiece);
 
                 // moving endTime to the new position to proceed with next request (if needed)
-                endTime = filteredPiece.First().Time;
+                endTime = filteredPiece.First().Time.ConvertToUtc(exchangeTimeZone);
             }
 
             return history;
@@ -3298,18 +3306,61 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
         {
             Log.Trace($"InteractiveBrokersBrokerage.OnIbAutomaterExited(): Exit code: {e.ExitCode}");
 
+            _stateManager.Reset();
+
             // check if IBGateway was closed because of an IBAutomater error
             var result = _ibAutomater.GetLastStartResult();
             CheckIbAutomaterError(result, false);
 
             if (!result.HasError && !_isDisposeCalled)
             {
-                // IBGateway was closed by the v978+ automatic logoff or it was closed manually (less likely)
-                Log.Trace("InteractiveBrokersBrokerage.OnIbAutomaterExited(): IBGateway close detected, restarting IBAutomater and reconnecting...");
+                // IBGateway was closed by IBAutomater because the auto-restart token expired or it was closed manually (less likely)
+                Log.Trace("InteractiveBrokersBrokerage.OnIbAutomaterExited(): IBGateway close detected, restarting IBAutomater in 10 seconds...");
 
-                Disconnect();
-                CheckIbAutomaterError(_ibAutomater.Start(false));
-                Connect();
+                Thread.Sleep(TimeSpan.FromSeconds(10));
+
+                Log.Trace("InteractiveBrokersBrokerage.OnIbAutomaterExited(): restarting...");
+
+                try
+                {
+                    Disconnect();
+
+                    CheckIbAutomaterError(_ibAutomater.Start(false));
+
+                    Connect();
+                }
+                catch (Exception exception)
+                {
+                    OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Error, "IBAutomaterRestartError", exception.ToString()));
+                }
+            }
+        }
+
+        private void OnIbAutomaterRestarted(object sender, EventArgs e)
+        {
+            Log.Trace("InteractiveBrokersBrokerage.OnIbAutomaterRestarted()");
+
+            _stateManager.Reset();
+
+            // check if IBGateway was closed because of an IBAutomater error
+            var result = _ibAutomater.GetLastStartResult();
+            CheckIbAutomaterError(result, false);
+
+            if (!result.HasError && !_isDisposeCalled)
+            {
+                // IBGateway was restarted automatically
+                Log.Trace("InteractiveBrokersBrokerage.OnIbAutomaterRestarted(): IBGateway restart detected, reconnecting...");
+
+                try
+                {
+                    Disconnect();
+
+                    Connect();
+                }
+                catch (Exception exception)
+                {
+                    OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Error, "IBAutomaterAutoRestartError", exception.ToString()));
+                }
             }
         }
 
@@ -3383,7 +3434,7 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
         // these are warning messages not sent as brokerage message events
         private static readonly HashSet<int> FilteredCodes = new HashSet<int>
         {
-            1100, 1101, 1102, 2103, 2104, 2105, 2106, 2107, 2108, 2119, 2157, 2158
+            1100, 1101, 1102, 2103, 2104, 2105, 2106, 2107, 2108, 2119, 2157, 2158, 10197
         };
     }
 }

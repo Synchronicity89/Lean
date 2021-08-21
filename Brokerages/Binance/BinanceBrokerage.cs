@@ -1,4 +1,4 @@
-﻿/*
+/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -25,6 +25,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using QuantConnect.Configuration;
 using QuantConnect.Util;
 using Timer = System.Timers.Timer;
 
@@ -36,46 +38,64 @@ namespace QuantConnect.Brokerages.Binance
     [BrokerageFactory(typeof(BinanceBrokerageFactory))]
     public partial class BinanceBrokerage : BaseWebsocketsBrokerage, IDataQueueHandler
     {
-        private const string WebSocketBaseUrl = "wss://stream.binance.com:9443/ws";
 
         private readonly IAlgorithm _algorithm;
         private readonly SymbolPropertiesDatabaseSymbolMapper _symbolMapper = new SymbolPropertiesDatabaseSymbolMapper(Market.Binance);
 
-        private readonly RateGate _webSocketRateLimiter = new RateGate(5, TimeSpan.FromSeconds(1));
+        // Binance allows 5 messages per second, but we still get rate limited if we send a lot of messages at that rate
+        // By sending 3 messages per second, evenly spaced out, we can keep sending messages without being limited
+        private readonly RateGate _webSocketRateLimiter = new RateGate(1, TimeSpan.FromMilliseconds(330));
         private long _lastRequestId;
 
+        private LiveNodePacket _job;
+        private string _webSocketBaseUrl;
         private readonly Timer _keepAliveTimer;
         private readonly Timer _reconnectTimer;
         private readonly BinanceRestApiClient _apiClient;
+        private readonly BrokerageConcurrentMessageHandler<WebSocketMessage> _messageHandler;
+
+        private const int MaximumSymbolsPerConnection = 512;
 
         /// <summary>
         /// Constructor for brokerage
         /// </summary>
         /// <param name="apiKey">api key</param>
         /// <param name="apiSecret">api secret</param>
+        /// <param name="restApiUrl">The rest api url</param>
+        /// <param name="webSocketBaseUrl">The web socket base url</param>
         /// <param name="algorithm">the algorithm instance is required to retrieve account type</param>
         /// <param name="aggregator">the aggregator for consolidating ticks</param>
-        public BinanceBrokerage(string apiKey, string apiSecret, IAlgorithm algorithm, IDataAggregator aggregator)
-            : base(WebSocketBaseUrl, new WebSocketClientWrapper(), null, apiKey, apiSecret, "Binance")
+        /// <param name="job">The live job packet</param>
+        public BinanceBrokerage(string apiKey, string apiSecret, string restApiUrl, string webSocketBaseUrl, IAlgorithm algorithm, IDataAggregator aggregator, LiveNodePacket job)
+            : base(webSocketBaseUrl, new WebSocketClientWrapper(), null, apiKey, apiSecret, "Binance")
         {
+            _job = job;
             _algorithm = algorithm;
             _aggregator = aggregator;
+            _webSocketBaseUrl = webSocketBaseUrl;
+            _messageHandler = new BrokerageConcurrentMessageHandler<WebSocketMessage>(OnUserMessage);
 
-            var subscriptionManager = new EventBasedDataQueueHandlerSubscriptionManager();
-            subscriptionManager.SubscribeImpl += (s, t) =>
-            {
-                Subscribe(s);
-                return true;
-            };
-            subscriptionManager.UnsubscribeImpl += (s, t) => Unsubscribe(s);
+            var maximumWebSocketConnections = Config.GetInt("binance-maximum-websocket-connections");
+            var symbolWeights = maximumWebSocketConnections > 0 ? FetchSymbolWeights() : null;
+
+            var subscriptionManager = new BrokerageMultiWebSocketSubscriptionManager(
+                webSocketBaseUrl,
+                MaximumSymbolsPerConnection,
+                maximumWebSocketConnections,
+                symbolWeights,
+                () => new BinanceWebSocketWrapper(null),
+                Subscribe,
+                Unsubscribe,
+                OnDataMessage,
+                new TimeSpan(23, 45, 0));
 
             SubscriptionManager = subscriptionManager;
 
-            _apiClient = new BinanceRestApiClient(
-                _symbolMapper,
+            _apiClient = new BinanceRestApiClient(_symbolMapper,
                 algorithm?.Portfolio,
                 apiKey,
-                apiSecret);
+                apiSecret,
+                restApiUrl);
 
             _apiClient.OrderSubmit += (s, e) => OnOrderSubmit(e);
             _apiClient.OrderStatusChanged += (s, e) => OnOrderEvent(e);
@@ -128,7 +148,7 @@ namespace QuantConnect.Brokerages.Binance
             _apiClient.CreateListenKey();
             _reconnectTimer.Start();
 
-            WebSocket.Initialize($"{WebSocketBaseUrl}/{_apiClient.SessionId}");
+            WebSocket.Initialize($"{_webSocketBaseUrl}/{_apiClient.SessionId}");
 
             base.Connect();
         }
@@ -150,6 +170,10 @@ namespace QuantConnect.Brokerages.Binance
         /// <returns></returns>
         public override List<Holding> GetAccountHoldings()
         {
+            if (_algorithm.BrokerageModel.AccountType == AccountType.Cash)
+            {
+                return base.GetAccountHoldings(_job?.BrokerageData, _algorithm.Securities.Values);
+            }
             return _apiClient.GetAccountHoldings();
         }
 
@@ -234,7 +258,7 @@ namespace QuantConnect.Brokerages.Binance
         {
             var submitted = false;
 
-            WithLockedStream(() =>
+            _messageHandler.WithLockedStream(() =>
             {
                 submitted = _apiClient.PlaceOrder(order);
             });
@@ -261,7 +285,7 @@ namespace QuantConnect.Brokerages.Binance
         {
             var submitted = false;
 
-            WithLockedStream(() =>
+            _messageHandler.WithLockedStream(() =>
             {
                 submitted = _apiClient.CancelOrder(order);
             });
@@ -305,8 +329,7 @@ namespace QuantConnect.Brokerages.Binance
                     Volume = kline.Volume,
                     Value = kline.Close,
                     DataType = MarketDataType.TradeBar,
-                    Period = period,
-                    EndTime = Time.UnixMillisecondTimeStampToDateTime(kline.OpenTime + (long)period.TotalMilliseconds)
+                    Period = period
                 };
             }
         }
@@ -318,20 +341,7 @@ namespace QuantConnect.Brokerages.Binance
         /// <param name="e"></param>
         public override void OnMessage(object sender, WebSocketMessage e)
         {
-            try
-            {
-                if (_streamLocked)
-                {
-                    _messageBuffer.Enqueue(e);
-                    return;
-                }
-            }
-            catch (Exception err)
-            {
-                Log.Error(err);
-            }
-
-            OnMessageImpl(e);
+            _messageHandler.HandleNewMessage(e);
         }
 
         #endregion
@@ -400,51 +410,55 @@ namespace QuantConnect.Brokerages.Binance
         }
 
         /// <summary>
-        /// Subscribes to the requested symbols (using an individual streaming channel)
+        /// Not used
         /// </summary>
-        /// <param name="symbols">The list of symbols to subscribe</param>
         public override void Subscribe(IEnumerable<Symbol> symbols)
         {
-            foreach (var symbol in symbols)
-            {
-                Send(WebSocket,
-                    new
-                    {
-                        method = "SUBSCRIBE",
-                        @params = new[]
-                        {
-                            $"{symbol.Value.ToLowerInvariant()}@trade",
-                            $"{symbol.Value.ToLowerInvariant()}@bookTicker"
-                        },
-                        id = GetNextRequestId()
-                    }
-                );
-            }
+            // NOP
         }
 
         /// <summary>
-        /// Ends current subscriptions
+        /// Subscribes to the requested symbol (using an individual streaming channel)
         /// </summary>
-        private bool Unsubscribe(IEnumerable<Symbol> symbols)
+        /// <param name="webSocket">The websocket instance</param>
+        /// <param name="symbol">The symbol to subscribe</param>
+        private bool Subscribe(IWebSocket webSocket, Symbol symbol)
         {
-            if (WebSocket.IsOpen)
-            {
-                foreach (var symbol in symbols)
+            Send(webSocket,
+                new
                 {
-                    Send(WebSocket,
-                        new
-                        {
-                            method = "UNSUBSCRIBE",
-                            @params = new[]
-                            {
-                                $"{symbol.Value.ToLowerInvariant()}@trade",
-                                $"{symbol.Value.ToLowerInvariant()}@bookTicker"
-                            },
-                            id = GetNextRequestId()
-                        }
-                    );
+                    method = "SUBSCRIBE",
+                    @params = new[]
+                    {
+                        $"{symbol.Value.ToLowerInvariant()}@trade",
+                        $"{symbol.Value.ToLowerInvariant()}@bookTicker"
+                    },
+                    id = GetNextRequestId()
                 }
-            }
+            );
+
+            return true;
+        }
+
+        /// <summary>
+        /// Ends current subscription
+        /// </summary>
+        /// <param name="webSocket">The websocket instance</param>
+        /// <param name="symbol">The symbol to unsubscribe</param>
+        private bool Unsubscribe(IWebSocket webSocket, Symbol symbol)
+        {
+            Send(webSocket,
+                new
+                {
+                    method = "UNSUBSCRIBE",
+                    @params = new[]
+                    {
+                        $"{symbol.Value.ToLowerInvariant()}@trade",
+                        $"{symbol.Value.ToLowerInvariant()}@bookTicker"
+                    },
+                    id = GetNextRequestId()
+                }
+            );
 
             return true;
         }
@@ -453,10 +467,7 @@ namespace QuantConnect.Brokerages.Binance
         {
             var json = JsonConvert.SerializeObject(obj);
 
-            if (!_webSocketRateLimiter.WaitToProceed(TimeSpan.Zero))
-            {
-                _webSocketRateLimiter.WaitToProceed();
-            }
+            _webSocketRateLimiter.WaitToProceed();
 
             Log.Trace("Send: " + json);
 
@@ -486,6 +497,37 @@ namespace QuantConnect.Brokerages.Binance
                 order.BrokerId.Add(brokerId);
                 CachedOrderIDs.TryAdd(order.Id, order);
             }
+        }
+
+        /// <summary>
+        /// Returns the weights for each symbol (the weight value is the count of trades in the last 24 hours)
+        /// </summary>
+        private static Dictionary<Symbol, int> FetchSymbolWeights()
+        {
+            var dict = new Dictionary<Symbol, int>();
+
+            try
+            {
+                const string url = "https://api.binance.com/api/v3/ticker/24hr";
+                var json = url.DownloadData();
+
+                foreach (var row in JArray.Parse(json))
+                {
+                    var ticker = row["symbol"].ToObject<string>();
+                    var count = row["count"].ToObject<int>();
+
+                    var symbol = Symbol.Create(ticker, SecurityType.Crypto, Market.Binance);
+
+                    dict.Add(symbol, count);
+                }
+            }
+            catch (Exception exception)
+            {
+                Log.Error(exception);
+                throw;
+            }
+
+            return dict;
         }
     }
 }

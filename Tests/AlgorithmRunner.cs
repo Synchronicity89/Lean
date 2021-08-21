@@ -54,7 +54,8 @@ namespace QuantConnect.Tests
             DateTime? startDate = null,
             DateTime? endDate = null,
             string setupHandler = "RegressionSetupHandlerWrapper",
-            decimal? initialCash = null)
+            decimal? initialCash = null,
+            string algorithmLocation = null)
         {
             AlgorithmManager algorithmManager = null;
             var statistics = new Dictionary<string, string>();
@@ -70,6 +71,9 @@ namespace QuantConnect.Tests
             Directory.CreateDirectory(Path.GetDirectoryName(logFile));
             File.Delete(logFile);
 
+            var reducedDiskSize = TestContext.Parameters.Exists("reduced-disk-size") &&
+                bool.Parse(TestContext.Parameters["reduced-disk-size"]);
+
             try
             {
                 // set the configuration up
@@ -83,28 +87,44 @@ namespace QuantConnect.Tests
                 Config.Set("api-handler", "QuantConnect.Api.Api");
                 Config.Set("result-handler", "QuantConnect.Lean.Engine.Results.RegressionResultHandler");
                 Config.Set("algorithm-language", language.ToString());
-                Config.Set("algorithm-location",
-                    language == Language.Python
-                        ? "../../../Algorithm.Python/" + algorithm + ".py"
-                        : "QuantConnect.Algorithm." + language + ".dll");
+                if (string.IsNullOrEmpty(algorithmLocation))
+                {
+                    Config.Set("algorithm-location",
+                        language == Language.Python
+                            ? "../../../Algorithm.Python/" + algorithm + ".py"
+                            : "QuantConnect.Algorithm." + language + ".dll");
+                }
+                else
+                {
+                    Config.Set("algorithm-location", algorithmLocation);
+                }
 
                 // Store initial log variables
                 var initialLogHandler = Log.LogHandler;
                 var initialDebugEnabled = Log.DebuggingEnabled;
 
+                ILogHandler[] newLogHandlers;
                 // Use our current test LogHandler and a FileLogHandler
-                var newLogHandlers = new ILogHandler[] { MaintainLogHandlerAttribute.LogHandler, new FileLogHandler(logFile, false) };
+                if (reducedDiskSize)
+                {
+                    newLogHandlers = new [] { MaintainLogHandlerAttribute.LogHandler };
+                }
+                else
+                {
+                    newLogHandlers = new [] { MaintainLogHandlerAttribute.LogHandler, new FileLogHandler(logFile, false) };
+                }
 
                 using (Log.LogHandler = new CompositeLogHandler(newLogHandlers))
                 using (var algorithmHandlers = LeanEngineAlgorithmHandlers.FromConfiguration(Composer.Instance))
                 using (var systemHandlers = LeanEngineSystemHandlers.FromConfiguration(Composer.Instance))
                 using (var workerThread  = new TestWorkerThread())
                 {
-                    Log.DebuggingEnabled = true;
+                    Log.DebuggingEnabled = !reducedDiskSize;
 
                     Log.Trace("");
                     Log.Trace("{0}: Running " + algorithm + "...", DateTime.UtcNow);
                     Log.Trace("");
+
 
                     // run the algorithm in its own thread
                     var engine = new Lean.Engine.Engine(systemHandlers, algorithmHandlers, false);
@@ -192,18 +212,21 @@ namespace QuantConnect.Tests
                 AssertAlphaStatistics(expectedAlphaStatistics, alphaStatistics, s => s.TotalInsightsAnalysisCompleted);
             }
 
-            // we successfully passed the regression test, copy the log file so we don't have to continually
-            // re-run master in order to compare against a passing run
-            var passedFile = logFile.Replace("./regression/", "./passed/");
-            Directory.CreateDirectory(Path.GetDirectoryName(passedFile));
-            File.Delete(passedFile);
-            File.Copy(logFile, passedFile);
+            if (!reducedDiskSize)
+            {
+                // we successfully passed the regression test, copy the log file so we don't have to continually
+                // re-run master in order to compare against a passing run
+                var passedFile = logFile.Replace("./regression/", "./passed/");
+                Directory.CreateDirectory(Path.GetDirectoryName(passedFile));
+                File.Delete(passedFile);
+                File.Copy(logFile, passedFile);
 
-            var passedOrderLogFile = ordersLogFile.Replace("./regression/", "./passed/");
-            Directory.CreateDirectory(Path.GetDirectoryName(passedFile));
-            File.Delete(passedOrderLogFile);
-            if (File.Exists(ordersLogFile)) File.Copy(ordersLogFile, passedOrderLogFile);
+                var passedOrderLogFile = ordersLogFile.Replace("./regression/", "./passed/");
+                Directory.CreateDirectory(Path.GetDirectoryName(passedFile));
+                File.Delete(passedOrderLogFile);
+                if (File.Exists(ordersLogFile)) File.Copy(ordersLogFile, passedOrderLogFile);
 
+            }
             return new AlgorithmRunnerResults(algorithm, language, algorithmManager, results);
         }
 

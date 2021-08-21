@@ -950,6 +950,7 @@ namespace QuantConnect.Algorithm
 
             // the time rules need to know the default time zone as well
             TimeRules.SetDefaultTimeZone(timeZone);
+            DateRules.SetDefaultTimeZone(timeZone);
 
             // In BackTest mode we reset the Algorithm time to reflect the new timezone
             // startDate is set by the user so we expect it to be for their timezone already
@@ -1734,15 +1735,13 @@ namespace QuantConnect.Algorithm
         /// <returns>The new <see cref="Option"/> security</returns>
         public Option AddOptionContract(Symbol symbol, Resolution? resolution = null, bool fillDataForward = true, decimal leverage = Security.NullLeverage)
         {
-            var configs = SubscriptionManager.SubscriptionDataConfigService.Add(symbol, resolution, fillDataForward, dataNormalizationMode:DataNormalizationMode.Raw);
-            var option = (Option)Securities.CreateSecurity(symbol, configs, leverage);
             // add underlying if not present
-            var underlying = option.Symbol.Underlying;
+            var underlying = symbol.Underlying;
             Security underlyingSecurity;
             List<SubscriptionDataConfig> underlyingConfigs;
             if (!Securities.TryGetValue(underlying, out underlyingSecurity))
             {
-                underlyingSecurity = AddSecurity(underlying, resolution, fillDataForward, leverage);
+                underlyingSecurity = AddSecurity(underlying, resolution, fillDataForward, leverage, UniverseSettings.ExtendedMarketHours);
                 underlyingConfigs = SubscriptionManager.SubscriptionDataConfigService
                     .GetSubscriptionDataConfigs(underlying);
             }
@@ -1763,11 +1762,13 @@ namespace QuantConnect.Algorithm
                 }
             }
 
+            var configs = SubscriptionManager.SubscriptionDataConfigService.Add(symbol, resolution, fillDataForward, dataNormalizationMode: DataNormalizationMode.Raw);
+            var option = (Option)Securities.CreateSecurity(symbol, configs, leverage, underlying: underlyingSecurity);
+
             underlyingConfigs.SetDataNormalizationMode(DataNormalizationMode.Raw);
             // For backward compatibility we need to refresh the security DataNormalizationMode Property
             underlyingSecurity.RefreshDataNormalizationModeProperty();
 
-            option.Underlying = underlyingSecurity;
             Securities.Add(option);
 
             // get or create the universe
@@ -1921,8 +1922,10 @@ namespace QuantConnect.Algorithm
             }
             else
             {
-                var universe = UniverseManager.Select(x => x.Value).OfType<UserDefinedUniverse>().FirstOrDefault(x => x.Members.ContainsKey(symbol));
-                universe?.Remove(symbol);
+                foreach (var universe in UniverseManager.Select(x => x.Value).OfType<UserDefinedUniverse>().Where(x => x.Members.ContainsKey(symbol)))
+                {
+                    universe.Remove(symbol);
+                }
             }
 
             return true;
