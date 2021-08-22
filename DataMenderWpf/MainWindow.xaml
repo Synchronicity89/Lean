@@ -1,4 +1,4 @@
-﻿<Window
+<Window
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -30,5 +30,6 @@
             <System:String>Below 3333333</System:String>
         </ComboBox>
         <Button x:Name="btnExperiments" Content="Experiments" HorizontalAlignment="Left" Height="26" Margin="675,-55,0,0" VerticalAlignment="Top" Width="133" Click="btnExperiments_Click"/>
+        <Button x:Name="btnIBKRNetRealized" Content="IBKR Report" HorizontalAlignment="Left" Margin="828,-55,0,0" VerticalAlignment="Top" Height="26" Width="121" Click="btnIBKRNetRealized_Click"/>
     </Grid>
 </Window>

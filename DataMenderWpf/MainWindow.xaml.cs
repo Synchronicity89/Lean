@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -110,6 +111,138 @@ namespace DataMenderWpf
             ll.AddLast(4.0);
 
         }
+
+        private void btnIBKRNetRealized_Click(object sender, RoutedEventArgs e)
+        {
+            //requires files placed in folder named IBKR branching off from some parent or grandparent (etc) folder that the app runs in (or uses as 
+            //working folder)
+            //Files are the latest Realized Report in csv form from the interactivebrokers.com website. Name has timestamp in it
+            //so latest file will be used.
+            //"Portfolio Orders.csv" file is optional.  If included make sure it is uptodate (exported from TWS Mosaic as Order Basket)
+            //If orders are found the app will compare the positions with the orders to see which options positions have no orders
+            var dir = new DirectoryInfo(".");
+            DirectoryInfo temp = dir;
+            while (temp.Parent.GetDirectories().Where(d => d.Name == "IBKR").Any() == false)
+            {
+                temp = temp.Parent;
+            }
+            var ibkrDir = temp.Parent.GetDirectories().Where(d => d.Name == "IBKR").FirstOrDefault();
+            if (ibkrDir == null) return;
+
+            var files = ibkrDir.GetFiles("*.csv").Where(f => f.Name != "Portfolio Orders.csv").OrderByDescending(f => f.CreationTimeUtc);
+            if (files.Any() == false) return;
+            var path = files.First().FullName;
+            var csvRows = System.IO.File.ReadAllLines(path, Encoding.Default).ToList();
+            var listOfLists = new List<List<string>>();
+            var uniqueTopics = csvRows.Select(r => r.Split(',')[0]).Distinct();
+            foreach (var topic in uniqueTopics)
+            {
+                List<string> list = new List<string>();
+                list.AddRange(csvRows.Where(r => r.Split(',')[0] == topic));
+                listOfLists.Add(list);
+            }
+            var sb = new StringBuilder();
+            foreach (var list in listOfLists)
+            {
+                var headerColumns = list.Where(r => r.Contains("\"") == false).First().Split(',');
+                List<int> maxLengths = new List<int>();
+                for (int i = 0; i < headerColumns.Length; i++)
+                {
+                    maxLengths.Add(list.Where(r => r.Contains("\"") == false).Select(r =>
+                    {
+                        int maxToReturn = 0;
+                        try
+                        {
+                            maxToReturn = r.Split(',')[i].Length;
+                        }
+                        catch
+                        {
+                            maxToReturn = headerColumns[i].Length;
+                        }
+                        return maxToReturn;
+                    }).Max());
+                }
+                foreach(var totalLine in list.Where(r => r.Contains("\"") == false))
+                {
+                    var totals = totalLine.Split(',');
+                    int index = 0;
+                    foreach(var total in totals)
+                    {
+                        sb.Append(total.PadRight(maxLengths[index] + 4, ' '));
+                        index++;
+                    }
+                    sb.AppendLine();
+                }
+            }
+
+            var ordersFile = ibkrDir.GetFiles("*.csv").Where(f => f.Name == "Portfolio Orders.csv");
+
+            txtOutput.Text += sb.ToString();
+            sb.Clear();
+
+            if (ordersFile.Any() == false) return;
+
+            var pathOrders = ordersFile.First().FullName;
+            var ordersRows = System.IO.File.ReadAllLines(pathOrders, Encoding.Default).ToList();
+
+            var optionsPositions = csvRows.Where(r => r.Contains("Open Positions") && r.Contains("Equity and Index Options"));
+            var listOfSecurities = new List<List<string>>();
+
+            foreach(var pos in optionsPositions)
+            {
+                listOfSecurities.Add(pos.Split(',')[5].Split(" ").ToList<string>());
+            }
+            //TODO: the following relies on data being enumerated in the same order every time
+            sb.AppendLine();
+            ordersRows.ForEach(o => sb.AppendLine(o));
+
+            sb.AppendLine();
+            sb.AppendLine("Positions for which there are no matching orders:");
+            for(int i =0;i < optionsPositions.Count();i++)
+            {
+                string matchingOrder = null;
+                foreach(var order in ordersRows)
+                { 
+                    bool match = true;
+                    int bitIndex = 0;
+                    foreach(var bit in listOfSecurities[i])
+                    {
+                        var test = bit;
+                        if (bitIndex == 1)
+                        {
+                            string original = bit;
+                            string day = original.Substring(0, 2);
+                            string month = original.Substring(2, 3);
+                            string year = original.Substring(5);
+                            DateTime converted;
+                            string convertedTo = null;
+                            DateTime.TryParseExact(bit, "ddMMMyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out converted);
+                            convertedTo = converted.ToString("yyyyMMdd");
+                            test = convertedTo;
+                        }
+                        else if (bitIndex == 2)
+                        {
+                            test = bit.Substring(0, bit.Length - 2);
+                        }
+                        if (order.Contains(test) == false)
+                        {
+                            match = false;
+                            break;
+                        }
+                        bitIndex++;
+                    }
+                    if (match) matchingOrder = order;
+                }
+                if(matchingOrder == null)
+                {
+                    sb.AppendLine(optionsPositions.ToArray()[i]);
+                }
+            }
+
+            txtOutput.Text += sb.ToString();
+            sb.Clear();
+        }
+
     }
 }
 //['account', 'action', 'activeStartTime', 'activeStopTime', 'adjustableTrailingUnit', 'adjustedOrderType', 'adjustedStopLimitPrice', 'adjustedStopPrice', 'adjustedTrailingAmount', 'algoId', 
