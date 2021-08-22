@@ -194,6 +194,7 @@ namespace DataMenderWpf
             }
             //TODO: the following relies on data being enumerated in the same order every time
             sb.AppendLine();
+            sb.AppendLine("Orders:");
             ordersRows.ForEach(o => sb.AppendLine(o));
 
             sb.AppendLine();
@@ -210,10 +211,6 @@ namespace DataMenderWpf
                         var test = bit;
                         if (bitIndex == 1)
                         {
-                            string original = bit;
-                            string day = original.Substring(0, 2);
-                            string month = original.Substring(2, 3);
-                            string year = original.Substring(5);
                             DateTime converted;
                             string convertedTo = null;
                             DateTime.TryParseExact(bit, "ddMMMyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out converted);
