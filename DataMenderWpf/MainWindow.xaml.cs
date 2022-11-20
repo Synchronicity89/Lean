@@ -122,7 +122,7 @@ namespace DataMenderWpf
             //If orders are found the app will compare the positions with the orders to see which options positions have no orders
             var dir = new DirectoryInfo(".");
             DirectoryInfo temp = dir;
-            while (temp.Parent.GetDirectories().Where(d => d.Name == "IBKR").Any() == false)
+            while (temp.Parent != null && temp.Parent.GetDirectories().Where(d => d.Name == "IBKR").Any() == false)
             {
                 temp = temp.Parent;
             }
@@ -132,7 +132,7 @@ namespace DataMenderWpf
             var files = ibkrDir.GetFiles("*.csv").Where(f => f.Name != "Portfolio Orders.csv").OrderByDescending(f => f.CreationTimeUtc);
             if (files.Any() == false) return;
             var path = files.First().FullName;
-            var csvRows = System.IO.File.ReadAllLines(path, Encoding.Default).ToList();
+            var csvRows = System.IO.File.ReadAllLines(path, Encoding.Default);//.ToList();
             var listOfLists = new List<List<string>>();
             var uniqueTopics = csvRows.Select(r => r.Split(',')[0]).Distinct();
             foreach (var topic in uniqueTopics)
@@ -240,6 +240,10 @@ namespace DataMenderWpf
             sb.Clear();
         }
 
+        private void btnClear_Click(object sender, RoutedEventArgs e)
+        {
+            txtOutput.Text = "";
+        }
     }
 }
 //['account', 'action', 'activeStartTime', 'activeStopTime', 'adjustableTrailingUnit', 'adjustedOrderType', 'adjustedStopLimitPrice', 'adjustedStopPrice', 'adjustedTrailingAmount', 'algoId', 
