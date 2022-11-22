@@ -39,12 +39,17 @@ namespace QuantConnect.ToolBox.CoinApiDataConverter
         {
             Market.GDAX,
             Market.Bitfinex,
-            Market.Binance
+            Market.Binance,
+            Market.FTX,
+            Market.FTXUS,
+            Market.Kraken,
+            Market.BinanceUS
         }.ToHashSet();
 
         private readonly DirectoryInfo _rawDataFolder;
         private readonly DirectoryInfo _destinationFolder;
         private readonly DateTime _processingDate;
+        private readonly string _market;
 
         /// <summary>
         /// CoinAPI data converter.
@@ -52,8 +57,13 @@ namespace QuantConnect.ToolBox.CoinApiDataConverter
         /// <param name="date">the processing date.</param>
         /// <param name="rawDataFolder">path to the raw data folder.</param>
         /// <param name="destinationFolder">destination of the newly generated files.</param>
-        public CoinApiDataConverter(DateTime date, string rawDataFolder, string destinationFolder)
+        /// <param name="market">The market to process (optional). Defaults to processing all markets in parallel.</param>
+        public CoinApiDataConverter(DateTime date, string rawDataFolder, string destinationFolder, string market = null)
         {
+            _market = string.IsNullOrWhiteSpace(market) 
+                ? null 
+                : market.ToLowerInvariant();
+            
             _processingDate = date;
             _rawDataFolder = new DirectoryInfo(Path.Combine(rawDataFolder, SecurityType.Crypto.ToLower(), "coinapi"));
             if (!_rawDataFolder.Exists)
@@ -91,13 +101,18 @@ namespace QuantConnect.ToolBox.CoinApiDataConverter
                     "quotes",
                     _processingDate.ToStringInvariant(DateFormat.EightCharacter)));
 
+            var rawMarket = _market != null &&
+                CoinApiSymbolMapper.MapMarketsToExchangeIds.TryGetValue(_market, out var rawMarketValue)
+                    ? rawMarketValue
+                    : null;
+            
             // Distinct by tick type and first two parts of the raw file name, separated by '-'.
             // This prevents us from double processing the same ticker twice, in case we're given
             // two raw data files for the same symbol. Related: https://github.com/QuantConnect/Lean/pull/3262
             var apiDataReader = new CoinApiDataReader(symbolMapper);
             var filesToProcessCandidates = tradesFolder.EnumerateFiles("*.gz")
                 .Concat(quotesFolder.EnumerateFiles("*.gz"))
-                .Where(f => f.Name.Contains("SPOT"))
+                .Where(f => f.Name.Contains("SPOT") && (rawMarket == null || f.Name.Contains(rawMarket)))
                 .Where(f => f.Name.Split('_').Length == 4)
                 .ToList();
 
@@ -108,7 +123,16 @@ namespace QuantConnect.ToolBox.CoinApiDataConverter
             {
                 try
                 {
-                    var key = candidate.Directory.Parent.Name + apiDataReader.GetCoinApiEntryData(candidate, _processingDate).Symbol.ID;
+                    var entryData = apiDataReader.GetCoinApiEntryData(candidate, _processingDate);
+                    CurrencyPairUtil.DecomposeCurrencyPair(entryData.Symbol, out var baseCurrency,
+                        out var quoteCurrency);
+
+                    if (!candidate.FullName.Contains(baseCurrency) && !candidate.FullName.Contains(quoteCurrency))
+                    {
+                        throw new Exception($"Skipping {candidate.FullName} we have the wrong symbol {entryData.Symbol}!");
+                    }
+
+                    var key = candidate.Directory.Parent.Name + entryData.Symbol.ID;
                     if (filesToProcessKeys.Add(key))
                     {
                         // Separate list from HashSet to preserve ordering of viable candidates
@@ -157,8 +181,28 @@ namespace QuantConnect.ToolBox.CoinApiDataConverter
                 return;
             }
 
+            var tickData = coinapiDataReader.ProcessCoinApiEntry(entryData, file);
+
+            // in some cases the first data points from '_processingDate' get's included in the previous date file
+            // so we will ready previous date data and drop most of it just to save these midnight ticks
+            var yesterdayDate = _processingDate.AddDays(-1);
+            var yesterdaysFile = new FileInfo(file.FullName.Replace(
+                _processingDate.ToStringInvariant(DateFormat.EightCharacter),
+                    yesterdayDate.ToStringInvariant(DateFormat.EightCharacter)));
+            if (yesterdaysFile.Exists)
+            {
+                var yesterdaysEntryData = coinapiDataReader.GetCoinApiEntryData(yesterdaysFile, yesterdayDate);
+                tickData = tickData.Concat(coinapiDataReader.ProcessCoinApiEntry(yesterdaysEntryData, yesterdaysFile));
+            }
+            else
+            {
+                Log.Error($"CoinApiDataConverter(): yesterdays data file not found '{yesterdaysFile.FullName}'");
+            }
+
             // materialize the enumerable into a list, since we need to enumerate over it twice
-            var ticks = coinapiDataReader.ProcessCoinApiEntry(entryData, file).OrderBy(t => t.Time).ToList();
+            var ticks = tickData.Where(tick => tick.Time.Date == _processingDate)
+                .OrderBy(t => t.Time)
+                .ToList();
 
             var writer = new LeanDataWriter(Resolution.Tick, entryData.Symbol, _destinationFolder.FullName, entryData.TickType);
             writer.Write(ticks);

@@ -33,7 +33,7 @@ class ETFConstituentUniverseFilterFunctionRegressionAlgorithm(QCAlgorithm):
         self.aapl = Symbol.Create("AAPL", SecurityType.Equity, Market.USA)
         self.qqq = self.AddEquity("QQQ", Resolution.Daily).Symbol
 
-        self.AddUniverse(ETFConstituentsUniverse(self.qqq, self.UniverseSettings, self.FilterETFs))
+        self.AddUniverse(self.Universe.ETF(self.qqq, self.UniverseSettings, self.FilterETFs))
 
     def FilterETFs(self, constituents):
         constituentSymbols = [i.Symbol for i in constituents]
@@ -77,7 +77,7 @@ class ETFConstituentUniverseFilterFunctionRegressionAlgorithm(QCAlgorithm):
             raise Exception(f"ETF constituent filtering function was not called 2 times (actual: {len(self.filterDateConstituentSymbolCount)}")
 
         if not self.mappingEventOccurred:
-            raise Exception("No mapping/SymbolChangedEvent occurred. Expected for QQQ to be mapped from QQQQ -> QQQ");
+            raise Exception("No mapping/SymbolChangedEvent occurred. Expected for QQQ to be mapped from QQQQ -> QQQ")
 
         for constituentDate, constituentsCount in self.filterDateConstituentSymbolCount.items():
             if constituentsCount < 25:

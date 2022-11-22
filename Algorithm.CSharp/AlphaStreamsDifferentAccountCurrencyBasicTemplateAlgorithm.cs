@@ -42,31 +42,41 @@ namespace QuantConnect.Algorithm.CSharp
         public Language[] Languages { get; } = { Language.CSharp };
 
         /// <summary>
+        /// Data Points count of all timeslices of algorithm
+        /// </summary>
+        public override long DataPoints => 6214;
+
+        /// <summary>
+        /// Data Points count of the algorithm history
+        /// </summary>
+        public override int AlgorithmHistoryDataPoints => 61;
+
+        /// <summary>
         /// This is used by the regression test system to indicate what the expected statistics are from running the algorithm
         /// </summary>
         public override Dictionary<string, string> ExpectedStatistics => new Dictionary<string, string>
         {
             {"Total Trades", "2"},
-            {"Average Win", "0%"},
-            {"Average Loss", "-0.84%"},
+            {"Average Win", "0.01%"},
+            {"Average Loss", "0.00%"},
             {"Compounding Annual Return", "-78.502%"},
             {"Drawdown", "3.100%"},
-            {"Expectancy", "-1"},
+            {"Expectancy", "7.797"},
             {"Net Profit", "-1.134%"},
             {"Sharpe Ratio", "-2.456"},
             {"Probabilistic Sharpe Ratio", "0%"},
-            {"Loss Rate", "100%"},
-            {"Win Rate", "0%"},
-            {"Profit-Loss Ratio", "0"},
-            {"Alpha", "0.008"},
-            {"Beta", "1.012"},
+            {"Loss Rate", "50%"},
+            {"Win Rate", "50%"},
+            {"Profit-Loss Ratio", "16.59"},
+            {"Alpha", "0.006"},
+            {"Beta", "1.011"},
             {"Annual Standard Deviation", "0.343"},
             {"Annual Variance", "0.117"},
-            {"Information Ratio", "-0.57"},
+            {"Information Ratio", "-0.859"},
             {"Tracking Error", "0.004"},
-            {"Treynor Ratio", "-0.831"},
-            {"Total Fees", "$2.89"},
-            {"Estimated Strategy Capacity", "$8900000000.00"},
+            {"Treynor Ratio", "-0.832"},
+            {"Total Fees", "€2.89"},
+            {"Estimated Strategy Capacity", "€8900000000.00"},
             {"Lowest Capacity Asset", "AAPL R735QTJ8XC9X"},
             {"Fitness Score", "0.506"},
             {"Kelly Criterion Estimate", "0"},

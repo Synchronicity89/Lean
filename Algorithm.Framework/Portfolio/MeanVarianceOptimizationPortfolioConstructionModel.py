@@ -11,23 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from clr import AddReference
-AddReference("System")
-AddReference("QuantConnect.Algorithm")
-AddReference("QuantConnect.Algorithm.Framework")
-AddReference("QuantConnect.Common")
-AddReference("QuantConnect.Indicators")
-
-from System import *
-from QuantConnect import *
-from QuantConnect.Indicators import *
-from QuantConnect.Algorithm import *
-from QuantConnect.Algorithm.Framework import *
-from QuantConnect.Algorithm.Framework.Portfolio import *
+from AlgorithmImports import *
 from Portfolio.MinimumVariancePortfolioOptimizer import MinimumVariancePortfolioOptimizer
-from datetime import timedelta
-import numpy as np
-import pandas as pd
 
 ### <summary>
 ### Provides an implementation of Mean-Variance portfolio optimization based on modern portfolio theory.
@@ -54,6 +39,7 @@ class MeanVarianceOptimizationPortfolioConstructionModel(PortfolioConstructionMo
             period(int): The time interval of history price to calculate the weight
             resolution: The resolution of the history price
             optimizer(class): Method used to compute the portfolio weights"""
+        super().__init__()
         self.lookback = lookback
         self.period = period
         self.resolution = resolution

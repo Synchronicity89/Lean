@@ -1,4 +1,4 @@
-﻿/*
+/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -82,6 +82,11 @@ namespace QuantConnect.Brokerages
         Zerodha,
 
         /// <summary>
+        /// Transaction and submit/execution rules will use Samco models
+        /// </summary>
+        Samco,
+
+        /// <summary>
         /// Transaction and submit/execution rules will use atreyu models
         /// </summary>
         Atreyu,
@@ -89,6 +94,36 @@ namespace QuantConnect.Brokerages
         /// <summary>
         /// Transaction and submit/execution rules will use TradingTechnologies models
         /// </summary>
-        TradingTechnologies
+        TradingTechnologies,
+
+        /// <summary>
+        /// Transaction and submit/execution rules will use Kraken models
+        /// </summary>
+        Kraken,
+
+        /// <summary>
+        /// Transaction and submit/execution rules will use ftx models
+        /// </summary>
+        FTX,
+
+        /// <summary>
+        /// Transaction and submit/execution rules will use ftx us models
+        /// </summary>
+        FTXUS,
+
+        /// <summary>
+        /// Transaction and submit/execution rules will use Exante models
+        /// </summary>
+        Exante,
+
+        /// <summary>
+        /// Transaction and submit/execution rules will use Binance.US models
+        /// </summary>
+        BinanceUS,
+
+        /// <summary>
+        /// Transaction and submit/execution rules will use Wolverine models
+        /// </summary>
+        Wolverine,
     }
 }

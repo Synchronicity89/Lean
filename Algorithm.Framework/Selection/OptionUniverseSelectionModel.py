@@ -11,18 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from clr import AddReference
+from AlgorithmImports import *
 from clr import GetClrType as typeof
-AddReference("System")
-AddReference("QuantConnect.Common")
-AddReference("QuantConnect.Algorithm.Framework")
-
-from QuantConnect import *
-from QuantConnect.Securities import *
-from QuantConnect.Data.Auxiliary import *
-from QuantConnect.Data.UniverseSelection import *
 from Selection.UniverseSelectionModel import UniverseSelectionModel
-from datetime import datetime
 
 class OptionUniverseSelectionModel(UniverseSelectionModel):
     '''Provides an implementation of IUniverseSelectionMode that subscribes to option chains'''
@@ -95,7 +86,7 @@ class OptionUniverseSelectionModel(UniverseSelectionModel):
         # force option chain security to not be directly tradable AFTER it's configured to ensure it's not overwritten
         optionChain.IsTradable = False
 
-        return OptionChainUniverse(optionChain, settings, algorithm.LiveMode)
+        return OptionChainUniverse(optionChain, settings)
 
     def CreateOptionChainSecurity(self, algorithm, symbol, settings):
         '''Creates the canonical option chain security for a given symbol
