@@ -323,5 +323,9 @@ namespace QuantConnect.Algorithm.CSharp
             {"Rolling Averaged Population Magnitude", "0%"},
             {"OrderListHash", "ce06ddfa4b2ffeb666a8910ac8836992"}
         };
+
+        public long DataPoints => throw new NotImplementedException();
+
+        public int AlgorithmHistoryDataPoints => throw new NotImplementedException();
     }
 }
